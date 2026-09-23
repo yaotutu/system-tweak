@@ -114,11 +114,12 @@
 
 - **范围**: 平台:Omarchy
 - **状态**: ✅ 已验证
-- **问题**: 需要一个跨 workspace 的全窗口总览入口，能显示所有打开窗口并快速切换。
+- **问题**: 需要一个跨 workspace 的全窗口总览入口，能显示所有打开窗口并快速切换；同时避免鼠标移到触发角时误打开。
 - **目标状态**:
   - 安装并启用第三方插件 `expose.window-overview`。
   - `Ctrl + Up` 打开或关闭 Exposé。
   - Exposé 显示所有 workspace 中的打开窗口。
+  - 触发角关闭：鼠标移到屏幕角落不应自动打开 Exposé。
   - 保留 `Ctrl + Left/Right` 的相邻 workspace 切换，不与之冲突。
 - **关键方案**:
   - 插件来源：
@@ -127,19 +128,74 @@
   - 修改 `~/.config/hypr/bindings.lua`：
     - 如已有 `CTRL + UP` 绑定，先用 `hl.unbind("CTRL + UP")` 解绑；
     - 再绑定 `CTRL + UP` 到 `hl.dsp.event("expose.window-overview:toggle")`，描述为 `Exposé`。
+  - 关闭触发角：
+    - 优先执行 `omarchy-shell expose hotCorner off`；
+    - 或确认 `~/.config/omarchy/shell.json` 中 `plugins` 数组的 `expose.window-overview` 条目包含 `"hotCornerEnabled": false`。
   - 修改后执行 `hyprctl reload`。
 - **硬件/环境差异**:
   - 插件依赖 Omarchy Shell；只适用于 Omarchy / Hyprland 环境。
   - 如果目标机器上 `Ctrl + Up` 已有更重要的用户配置，应先询问用户，不要直接覆盖。
   - 本条目描述快捷键与总览行为，不要求直接复制其他 Hyprland 键绑定。
+  - `~/.config/omarchy/shell.json` 还包含本机的 bar、idle 等配置；不要整份复制到其他电脑，只应更新 Exposé 插件的 `hotCornerEnabled` 配置。
 - **经验教训**:
   - 使用插件提供的事件入口 `expose.window-overview:toggle`，不要假设仓库示例中的 CLI 命令一定在当前 PATH 中。
   - `Ctrl + Up` 若已有默认绑定，必须先 `hl.unbind(...)`，否则新旧绑定可能并存或被默认绑定干扰。
   - Exposé 插件本身与 Mirador 的 workspace carousel 是不同用途；本条目只要求 `Ctrl + Up` 的全窗口总览由 Exposé 提供。
+  - 最终状态还需要关闭 hot corner；否则鼠标经过屏幕角落可能意外打开 overlay。使用 `omarchy-shell expose hotCorner off`，不要手写错误的顶层配置。
 - **验证**:
   - `omarchy plugin list` 中 `expose.window-overview` 为 enabled。
   - `hyprctl reload` 返回 `ok`。
   - `hyprctl configerrors` 无错误。
   - `omarchy menu keybindings --print` 显示 `CTRL + UP → Exposé`。
   - `hyprctl binds -j` 确认快捷键已注册。
+  - 用 `jq` 检查：
+    `jq '.plugins[] | select(.id == "expose.window-overview").hotCornerEnabled' ~/.config/omarchy/shell.json`
+    应输出 `false`。
+  - `hyprctl layers` 中不应出现 `expose-hot-corner`。
   - 实际按 `Ctrl + Up` 能打开总览，再按一次能关闭。
+  - 鼠标移到屏幕触发角不应自动打开 Exposé。
+
+
+## SYNC-005 · Super+Tab 使用 Mirador Carousel 切换 Workspace
+
+- **范围**: 平台:Omarchy
+- **状态**: ✅ 已验证
+- **问题**: 需要通过按住 `Super` 再按 `Tab/Shift+Tab` 循环切换 workspace，松开 `Super` 后进入高亮 workspace，替代默认的相邻 workspace 切换。
+- **目标状态**:
+  - 安装并启用第三方插件 `mirador`。
+  - `Super + Tab` 在 workspace carousel 中前进。
+  - `Super + Shift + Tab` 在 workspace carousel 中后退。
+  - 按住 `Super` 期间可以连续按 `Tab` 浏览；松开 `Super` 后进入高亮 workspace。
+  - 保留 `Ctrl + Left/Right` 的相邻 workspace 顺序切换。
+  - 保留 `Ctrl + Up` 的 Exposé 全窗口总览。
+- **关键方案**:
+  - 插件来源：
+    `https://github.com/sanjyay/Mirador.git`
+  - 使用 `omarchy plugin add` 安装并启用，插件 ID 为 `mirador`。
+  - 修改 `~/.config/hypr/bindings.lua`：
+    - 先解除默认绑定：
+      `hl.unbind("SUPER + TAB")`
+      `hl.unbind("SUPER + SHIFT + TAB")`
+    - 再绑定：
+      `SUPER + TAB` →
+      `omarchy-shell shell summon mirador '{"step":1,"modifier":"super","cycleUI":"carousel","keybindMode":"cycle"}'`
+      `SUPER + SHIFT + TAB` →
+      `omarchy-shell shell summon mirador '{"step":-1,"modifier":"super","cycleUI":"carousel","keybindMode":"cycle"}'`
+  - 修改后执行 `hyprctl reload`。
+- **硬件/环境差异**:
+  - 依赖 Omarchy Shell 和第三方 `mirador` 插件；只适用于 Omarchy / Hyprland 环境。
+  - `~/.config/omarchy/shell.json` 是机器运行状态文件，不应整份复制；只要求在新机器上通过 `omarchy plugin add ... --enable` 安装并启用插件。
+  - 如果目标机器已有更重要的 `Super + Tab` 使用习惯，应先询问用户，不要直接覆盖。
+- **经验教训**:
+  - 调用 `omarchy-shell shell summon mirador`，不要依赖插件仓库中的 `bin/mirador`；该二进制可能不在当前 PATH。
+  - 替换默认 `Super + Tab` / `Super + Shift + Tab` 时必须先 `hl.unbind(...)`，否则默认绑定会残留。
+  - 不要加载 Mirador 仓库里的完整绑定文件；那会覆盖其他 Omarchy 默认快捷键，只应添加这两个用户绑定。
+  - Mirador Carousel 和 Exposé 是互补功能：Mirador 负责 workspace carousel，Exposé 负责全窗口总览，不能按某次中间变更误认为 Mirador 已被 Exposé 完全替代。
+- **验证**:
+  - `omarchy plugin list` 中 `mirador` 为 enabled。
+  - `hyprctl reload` 返回 `ok`。
+  - `hyprctl configerrors` 无错误。
+  - `omarchy menu keybindings --print` 显示 `SUPER + TAB` 与 `SUPER + SHIFT + TAB` 的 Mirador Carousel 描述。
+  - `hyprctl binds -j` 确认两个快捷键已注册。
+  - 实际按住 `Super` 后连续按 `Tab`，应逐个显示 workspace；松开 `Super` 后进入高亮 workspace。
+  - `Ctrl + Left/Right` 和 `Ctrl + Up` 仍应保持原目标行为。
