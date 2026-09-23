@@ -31,13 +31,13 @@
 
 ## 同步目录结构
 
+当前只有 Omarchy 一个平台，因此不再按通用/平台分额外层级。
+
 ```text
 sync/
 ├── README.md
 ├── INDEX.md
-├── universal/README.md
-└── platforms/omarchy/
-    ├── README.md
+└── topics/
     ├── input-method.md
     ├── keyboard-layout.md
     ├── workspace-navigation.md
