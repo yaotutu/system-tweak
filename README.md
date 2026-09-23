@@ -1,17 +1,45 @@
 # system-tweak
 
-用于记录、复现和同步个人系统配置的工作目录。
+用于在 Omarchy / Arch Linux / Hyprland 电脑之间记录、提炼和复现个人系统配置。
 
-## 目录职责
+## 职责分层
 
-- `AGENTS.md`
-  - 交给 AI 读取的工作规则。
-- `sync/`
-  - 需要在多台电脑之间同步的目标状态文档。
-- `logs/`
-  - 本机变更日志。只记录历史，不作为同步内容。
-- `.gitignore`
-  - 保证本机日志和备份文件默认不进入同步仓库。
+```text
+sync/   = What：系统最终应该是什么状态
+skills/ = How：如何写入同步库、如何应用到电脑
+logs/   = History：本机发生过什么
+Git     = Version：同步文档的版本历史
+```
+
+## 目录结构
+
+```text
+system-tweak/
+├── AGENTS.md          # AI 必读规则与技能路由
+├── README.md
+├── .gitignore
+├── skills/
+│   ├── sync-capture.md  # 把已验证配置提炼进同步库
+│   └── sync-apply.md    # 把同步目标应用到某台电脑
+├── sync/
+│   ├── README.md
+│   ├── INDEX.md
+│   └── topics/
+│       ├── input-method.md
+│       ├── keyboard-layout.md
+│       ├── workspace-navigation.md
+│       └── window-overview.md
+└── logs/               # 本机日志，不入 Git
+```
+
+当前只有 Omarchy 一个平台；`sync/topics/` 不再按通用/平台分额外层级。
+
+## 使用入口
+
+| 用户意图 | 使用的 skill |
+|---|---|
+| 把已验证配置加入同步、更新 sync 文档 | `skills/sync-capture.md` |
+| 初始化新电脑、更新另一台电脑的配置 | `skills/sync-apply.md` |
 
 ## 同步范围
 
@@ -20,6 +48,7 @@
 - `AGENTS.md`
 - `README.md`
 - `.gitignore`
+- `skills/`
 - `sync/`
 
 不同步：
@@ -29,99 +58,18 @@
 - 备份文件
 - 密码、Token、密钥、Cookie 等敏感信息
 
-## 同步目录结构
+## 远程仓库
 
-当前只有 Omarchy 一个平台，因此不再按通用/平台分额外层级。
-
-```text
-sync/
-├── README.md
-├── INDEX.md
-└── topics/
-    ├── input-method.md
-    ├── keyboard-layout.md
-    ├── workspace-navigation.md
-    └── window-overview.md
-```
-
-设计要点：一个主题一个文件，`INDEX.md` 只做导航，不承载细节。
-
-## 远程同步流程
-
-1. 在开始修改 `sync/` 之前执行：
-
-   ```bash
-   git pull --rebase
-   ```
-
-2. 修改主题文件和 `sync/INDEX.md`。
-3. 验证通过后提交：
-
-   ```bash
-   git add sync README.md AGENTS.md
-   git commit -m "<描述本次同步目标>"
-   ```
-
-4. 配置远程仓库后推送：
-
-   ```bash
-   git push
-   ```
-
-### 初始化远程仓库
-
-仓库必须使用私有远程仓库。创建私有仓库后执行：
+远程仓库必须为私有仓库。创建后执行：
 
 ```bash
 git remote add origin <远程仓库地址>
 git push -u origin main
 ```
 
-当前机器还没有配置远程仓库时，只保留本地提交，不执行 `git push`。
+如果当前机器尚未配置远程仓库，只保留本地提交，不执行 `git push`。
 
-## 新电脑初始化
+详细写入和应用流程见：
 
-1. 克隆仓库：
-
-   ```bash
-   git clone <私有仓库地址> ~/code/system-tweak
-   cd ~/code/system-tweak
-   ```
-
-2. 读取 `AGENTS.md` 与 `sync/README.md`。
-3. 读取 `sync/INDEX.md`，按索引逐个处理主题，不要一次性全改。
-4. 先做系统盘点：
-
-   ```bash
-   omarchy version
-   hyprctl monitors
-   hyprctl configerrors
-   fcitx5-remote -n
-   omarchy plugin list
-   pacman -Q
-   ```
-
-5. 按主题顺序检查并应用：
-
-   ```text
-   input-method
-   keyboard-layout
-   workspace-navigation
-   window-overview
-   ```
-
-6. 每完成一个主题，先验证，再写入本机 `logs/YYYY-MM.md`。
-7. 全部主题完成后再做一次总验证，并向用户报告：
-   - 已满足哪些目标；
-   - 修改了哪些文件；
-   - 安装或启用了哪些软件包和插件；
-   - 因硬件差异做了哪些适配；
-   - 还有哪些无法自动决定的问题。
-
-## 标准流程
-
-1. 在本机完成一次系统配置修改。
-2. 按 `AGENTS.md` 写入本机日志。
-3. 修改验证通过后，由 AI 判断是否适合同步，并询问用户。
-4. 用户明确同意后，AI 才能把它提炼为“最终目标状态 + 关键经验”，写入 `sync/`。
-5. 在新电脑上，AI 读取 `AGENTS.md` 与 `sync/`，先检查当前状态，再补齐缺失配置。
+- `skills/sync-capture.md`
+- `skills/sync-apply.md`
