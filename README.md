@@ -29,6 +29,23 @@
 - 备份文件
 - 密码、Token、密钥、Cookie 等敏感信息
 
+## 同步目录结构
+
+```text
+sync/
+├── README.md
+├── INDEX.md
+├── universal/README.md
+└── platforms/omarchy/
+    ├── README.md
+    ├── input-method.md
+    ├── keyboard-layout.md
+    ├── workspace-navigation.md
+    └── window-overview.md
+```
+
+设计要点：一个主题一个文件，`INDEX.md` 只做导航，不承载细节。
+
 ## 标准流程
 
 1. 在本机完成一次系统配置修改。
