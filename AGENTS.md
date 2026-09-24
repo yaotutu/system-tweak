@@ -27,12 +27,22 @@ sync-policy.json = CHG 发布策略；默认 ask，指定领域可为 always
 
 | 用户请求 | 工作流 |
 |---|---|
-| “初始化新电脑”“补齐缺失配置”“检查有什么没同步” | §2 应用待处理变更 |
+| `$new-machine`、或“初始化新电脑” | `.agents/skills/new-machine/SKILL.md`，再执行 §2 |
+| `$sync-changes`、或“同步缺失变更到本机” | `.agents/skills/sync-changes/SKILL.md`，再执行 §2 |
+| `$audit`、或“审计所有变更” | `.agents/skills/audit/SKILL.md`，再执行 §9 |
 | “帮我改这个设置”“安装这个软件”“修复这个问题” | §5 本机真实修改 |
-| “审计”“检查所有变更” | §9 审计 |
 | “同步这个”“所有电脑都要有” | §7 发布上游变更 |
 | 只查询或诊断 | 只读检查；不得修改系统 |
 
+项目内自定义入口存放在 `.agents/skills/`，Codex 从仓库发现它们。显式调用语法是：
+
+```text
+$new-machine
+$sync-changes
+$audit
+```
+
+Codex 0.155.1 不支持任意项目自定义 `/xxx` slash command；未知 `/xxx` 会被 TUI 当作未识别命令。因此本项目使用 `$skill` 显式调用，或使用普通自然语言触发技能描述。
 如果词义模糊，应先确认用户意图，不得擅自执行。
 
 ## 2. 应用待处理变更

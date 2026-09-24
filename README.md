@@ -12,6 +12,22 @@ backups/  = local pre-change backups, never published
 
 Git publishes documents only. It never copies a real system configuration file or a package.
 
+## Project commands
+
+This project ships repository-local Codex skills under `.agents/skills/`. Codex discovers them and they can be invoked explicitly with `$skill-name`:
+
+```text
+$new-machine
+$sync-changes
+$audit
+```
+
+- `$new-machine`: initialize a computer that has not used this repository before.
+- `$sync-changes`: process only the upstream changes missing from this machine.
+- `$audit`: read-only check of all processed changes.
+
+Arbitrary project-local `/xxx` slash commands are not supported by Codex 0.155.1. Use `$skill-name` instead.
+
 ## Flow
 
 On a machine:
