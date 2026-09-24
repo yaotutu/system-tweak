@@ -9,3 +9,4 @@ This is the shared knowledge manual. It explains causes, design decisions, and p
 | [Workspace navigation](workspace-navigation.md) | CHG-0003, CHG-0006 | Verified |
 | [Omascape workspace overview](omascape-workspace-overview.md) | CHG-0004 | Verified |
 | [WeChat scaling and input method](wechat-input-scaling.md) | CHG-0005 | Verified |
+| [Foot selection copy](foot-selection-copy.md) | CHG-0007 | Verified |
