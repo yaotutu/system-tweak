@@ -10,7 +10,4 @@ This file lists upstream changes. It is append-only: never rewrite, renumber, or
 | CHG-0004 | Omascape 全 Workspace 总览 | 2026-09-23 | - | - |
 | CHG-0005 | 微信缩放与 Fcitx5 候选词 | 2026-09-24 | - | - |
 | CHG-0006 | Workspace 左右切换不循环 | 2026-09-24 | CHG-0003 | - |
-| CHG-0007 | Foot 选中文本自动复制 | 2026-09-24 | - | - |
-| CHG-0008 | Foot 快捷打开超链接 | 2026-09-24 | - | - |
-| CHG-0009 | Foot 超链接快捷键改为 Super+Shift+O | 2026-09-24 | - | CHG-0008 |
-| CHG-0010 | Foot 超链接快捷键恢复 Ctrl+Shift+O | 2026-09-24 | CHG-0008 | CHG-0009 |
+| CHG-0007 | Fcitx5 Mellow Youlan 主题 | 2026-09-24 | CHG-0001 | - |
