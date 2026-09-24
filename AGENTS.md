@@ -7,8 +7,35 @@
 | 用户意图 | 必读工作流 |
 |---|---|
 | 修改这台电脑的系统设置 | `workflows/change-system.md` |
+| 安装/升级/配置/排查某个应用、输入法、显示缩放或服务问题 | 先执行下方“目标库检索”，再按 `workflows/change-system.md` 处理 |
 | 把已验证设置写入所有电脑的目标库 | `workflows/update-targets.md` |
 | 初始化新电脑，或把目标库应用到某台电脑 | `workflows/apply-targets.md` |
+
+## 目标库检索：已知经验查找
+
+在处理任何具体应用、输入法、显示缩放、服务、兼容性、安装或排查问题之前，必须先查询 `targets/INDEX.md` 和具体主题，不能从零猜测。
+
+检索步骤：
+
+1. 读取 `targets/INDEX.md`。
+2. 用用户问题中的关键词搜索 `targets/INDEX.md` 和 `targets/topics/`，至少覆盖：
+   - 应用中文名和英文名；
+   - 包名或命令名；
+   - 问题描述关键词，如 `缩放`、`scale`、`输入法`、`fcitx`、`rime`、`candidate`、`candidate window`；
+   - 相关技术栈关键词，如 `Qt`、`GTK`、`Electron`、`XWayland`。
+3. 如果命中具体主题，完整阅读该主题文件，再检查当前机器版本和硬件环境。格式模板、README 示例或通用说明不算命中已知方案。
+4. `Stable` 目标可作为已知经验使用，但必须按当前机器适配，不能盲抄其他机器的值。
+5. `Experimental` / `Draft` 目标只能提示可能方向，未经用户确认不得当作已验证方案。
+6. 未命中时，明确告诉用户“目标库暂无相关记录”，再从当前机器状态开始排查。
+
+示例：
+
+```bash
+grep -RniE "微信|wechat|缩放|scale|输入法|fcitx|rime" targets/INDEX.md targets/topics
+```
+
+只要仓库已同步到当前电脑，本节规则就会自动生效；不需要依赖某台电脑的本地日志或全局记忆。
+
 
 只读检查、诊断、查看文档或查看 Git 历史时不强制加载工作流，但不得修改系统或目标库。
 
