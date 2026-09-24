@@ -116,14 +116,15 @@ a new machine processes only `CHG-0010`. It does not apply `CHG-0008`, then `CHG
 ## Example
 
 ```text
-Upstream: CHG-0001 … CHG-0011
+Upstream: CHG-0001 … CHG-0012
 Local:    CHG-0001 … CHG-0006
-Pending:  CHG-0007 … CHG-0011
+Pending:  CHG-0007 … CHG-0012
 
 Effective after supersedes:
   CHG-0007
   CHG-0010
   CHG-0011
+  CHG-0012
 ```
 
 The other machine processes only the effective pending changes, not obsolete intermediate records.
@@ -145,7 +146,7 @@ system-tweak/
 │   └── topic files
 ├── changes/
 │   ├── index.json
-│   └── CHG-0001.json … CHG-0011.json
+│   └── CHG-0001.json … CHG-0012.json
 ├── .local/
 │   └── applied.json
 ├── logs/
