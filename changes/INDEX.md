@@ -11,3 +11,4 @@ This file lists upstream changes. It is append-only: never rewrite, renumber, or
 | CHG-0005 | 微信缩放与 Fcitx5 候选词 | 2026-09-24 | - | - |
 | CHG-0006 | Workspace 左右切换不循环 | 2026-09-24 | CHG-0003 | - |
 | CHG-0007 | Foot 选中文本自动复制 | 2026-09-24 | - | - |
+| CHG-0008 | Foot 快捷打开超链接 | 2026-09-24 | - | - |
