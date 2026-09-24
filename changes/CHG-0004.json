@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "id": "CHG-0004",
+  "title": "Omascape 全 Workspace 总览",
+  "date": "2026-09-23",
+  "scope": [
+    "Omarchy"
+  ],
+  "domains": [
+    "omarchy",
+    "hyprland",
+    "workspace"
+  ],
+  "keywords": [
+    "Omascape",
+    "omascape",
+    "全窗口总览",
+    "workspace overview",
+    "实时缩略图",
+    "搜索窗口"
+  ],
+  "supersedes": [],
+  "buildsOn": [],
+  "manual": "omascape-workspace-overview.md",
+  "risk": "medium",
+  "requiresBackup": true,
+  "backupPaths": [
+    "~/.config/hypr/bindings.lua",
+    "~/.config/omarchy/plugins/se.mindfulstack.omascape"
+  ],
+  "intent": {
+    "summary": "启用 Omascape 作为唯一的全 Workspace 总览入口。",
+    "outcomes": [
+      "Ctrl + Up 打开或关闭 Omascape。",
+      "总览显示所有 workspace 的窗口。",
+      "支持实时缩略图、搜索窗口和拖拽窗口到其他 workspace。",
+      "不使用 Exposé 或 Mirador 提供全 workspace 总览。"
+    ]
+  },
+  "check": {
+    "readOnly": true,
+    "commands": [
+      "omarchy plugin list | grep se.mindfulstack.omascape",
+      "omarchy menu keybindings --print | grep \"CTRL + UP\""
+    ],
+    "expected": [
+      "se.mindfulstack.omascape 为 enabled。",
+      "CTRL + UP → Omascape workspace overview 已注册。"
+    ]
+  },
+  "apply": {
+    "selfContained": true,
+    "steps": [
+      "备份 bindings.lua 和插件状态。",
+      "安装并启用 Omascape 插件。",
+      "解除旧的 Ctrl + Up 绑定。",
+      "将 CTRL + UP 绑定到切换 Omascape。",
+      "执行 hyprctl reload。"
+    ],
+    "commands": [
+      "omarchy plugin add https://github.com/Mindful-Stack/omascape.git --enable",
+      "hyprctl reload"
+    ]
+  },
+  "adapt": [
+    "若目标电脑已有更重要的 Ctrl + Up 使用习惯，先询问用户。",
+    "不要整份复制 shell.json，只通过 omarchy plugin add 安装启用。",
+    "若 Omascape 版本变化导致交互不同，先验证搜索和拖拽。"
+  ],
+  "verify": {
+    "commands": [
+      "omarchy plugin list | grep se.mindfulstack.omascape",
+      "hyprctl configerrors"
+    ],
+    "expected": [
+      "插件 enabled。",
+      "Ctrl + Up 能打开并关闭总览。",
+      "搜索窗口可命中目标。",
+      "拖拽窗口到其他 workspace 后目标 workspace 出现该窗口。"
+    ]
+  },
+  "rollback": {
+    "steps": [
+      "恢复本机应用该变更前的 bindings.lua 备份。",
+      "如需撤销插件状态，禁用 se.mindfulstack.omascape。",
+      "不要自动卸载插件。"
+    ]
+  }
+}

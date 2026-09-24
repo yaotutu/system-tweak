@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "changes": [
+    {
+      "id": "CHG-0001",
+      "file": "CHG-0001.json"
+    },
+    {
+      "id": "CHG-0002",
+      "file": "CHG-0002.json"
+    },
+    {
+      "id": "CHG-0003",
+      "file": "CHG-0003.json"
+    },
+    {
+      "id": "CHG-0004",
+      "file": "CHG-0004.json"
+    },
+    {
+      "id": "CHG-0005",
+      "file": "CHG-0005.json"
+    },
+    {
+      "id": "CHG-0006",
+      "file": "CHG-0006.json"
+    },
+    {
+      "id": "CHG-0007",
+      "file": "CHG-0007.json"
+    },
+    {
+      "id": "CHG-0008",
+      "file": "CHG-0008.json"
+    },
+    {
+      "id": "CHG-0009",
+      "file": "CHG-0009.json"
+    },
+    {
+      "id": "CHG-0010",
+      "file": "CHG-0010.json"
+    },
+    {
+      "id": "CHG-0011",
+      "file": "CHG-0011.json"
+    },
+    {
+      "id": "CHG-0012",
+      "file": "CHG-0012.json"
+    }
+  ]
+}

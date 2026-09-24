@@ -1,39 +1,46 @@
 # AGENTS.md — system-tweak 项目规则
 
-所有 Agent 在本仓库中工作时必须遵守本文件。其他 README、manual、changes 文档若与本文件冲突，以本文件为准。
+所有 Agent 在本仓库中工作时必须遵守本文件。其他 README、manual、schema、changes 文档若与本文件冲突，以本文件为准。
 
 ## 术语定义
-- **CHG**：`changes/` 中的一次共享状态变更，一个编号一个文件，包含 Intent / Check / Apply / Adapt / Verify / Rollback。
-- **上游（upstream）**：当前机器可看到的共享 `changes/`、`manual/` 和策略文件。
+
+- **CHG**：`changes/CHG-XXXX.json` 中的一次共享状态变更，一个编号一个 JSON 文件，包含 Intent / Check / Apply / Adapt / Verify / Rollback。
+- **CHG v1 schema**：`schema/chg.schema.json` 定义的 CHG JSON 结构。
+- **CHG index**：`changes/index.json`，只保存 canonical `id` 与 `file`，不得重复保存完整元数据。
+- **上游（upstream）**：当前机器可看到的共享 `changes/`、`manual/`、`schema/`、策略文件和验证脚本。
 - **本机（local）**：当前这台电脑的真实系统状态，以及 `.local/`、`logs/`、`backups/`。
 - **台账（local ledger）**：`.local/applied.json`，记录本机处理过哪些 CHG。
 - **已应用（applied）**：本机真实执行过该 CHG，且验证通过。
 - **已满足（already-satisfied）**：本机处理前已经满足该 CHG，因此这次没有改系统。
-- **跳过（skipped）**：用户明确决定本机不应用该 CHG。
+- **跳过（skipped）**：用户明确决定本机不应用该 CHG；或该 CHG 在执行前已被更高编号 CHG 传递性取代。
 - **失败（failed）**：本机应用该 CHG 失败，不能当作完成。
 - **待处理（pending）**：上游有、但本机台账里还没有的 CHG。
-- **取代（Supersedes）**：新 CHG 废止旧 CHG 的方案。
-- **继承（Builds on）**：新 CHG 在旧 CHG 方案基础上继续演进。
-- **审计（audit）**：只读检查本机是否仍满足某个 CHG，不修改系统。
+- **取代（supersedes）**：新 CHG 废止旧 CHG 的方案。该关系参与同步跳过与审计计算，并计算传递闭包。
+- **继承（buildsOn）**：新 CHG 在旧 CHG 方案基础上继续演进，只是设计血缘，不是执行依赖。
+- **有效 CHG（effective CHG）**：没有被任何更高编号 CHG 传递性取代的 CHG。
+- **审计（audit）**：只读检查本机是否仍满足某个有效 CHG，不修改系统。
 
 ## 0. 固定模型
 
 ```text
-logs/     = 本机历史：每次真实修改必写；永远不同步
-manual/   = 共享说明书：经验、根因、坑；默认同步；只解释，不执行
-changes/  = 共享状态变更：可检查、可应用、可验证、可回滚；按策略发布；同步
-.local/   = 本机处理台账：记录本机处理过哪些 CHG；永远不同步
-backups/  = 本机回滚备份：修改前原文件；永远不同步
+logs/         = 本机历史：每次真实修改必写；永远不同步
+manual/       = 共享说明书：经验、根因、坑；默认同步；只解释，不执行
+changes/      = 共享状态变更：CHG JSON；可检查、可应用、可验证、可回滚；按策略发布；同步
+schema/       = 共享 JSON Schema：定义 CHG 与 index 结构；同步
+scripts/      = 共享校验脚本：校验 CHG JSON 与 index；同步
+.local/       = 本机处理台账：记录本机处理过哪些 CHG；永远不同步
+backups/      = 本机回滚备份：修改前原文件；永远不同步
 sync-policy.json = CHG 发布策略；默认 ask，指定领域可为 always
 ```
 
 绝对边界：
 
-1. Git 不同步真实系统配置，只同步文档和策略。
-2. `manual/` 不能直接触发系统修改；需要改系统时必须依赖 `changes/CHG-XXXX.md`。
+1. Git 不同步真实系统配置，只同步文档、Schema、策略和脚本。
+2. `manual/` 不能直接触发系统修改；需要改系统时必须依赖 `changes/CHG-XXXX.json`。
 3. `logs/`、`.local/`、`backups/` 永不入 Git。
 4. 真实系统修改必须先备份，再修改，后验证。
 5. 高风险、敏感、私密、毁灭性操作必须先询问用户。
+6. CHG 只允许 JSON v1；本仓库不保留 Markdown CHG 兼容层。不得创建 `changes/*.md`。
 
 ## 1. 请求路由
 
@@ -65,26 +72,41 @@ Codex 0.155.1 不支持任意项目自定义 `/xxx` slash command；未知 `/xxx
 
 流程：
 
-1. 读取 `changes/INDEX.md`。
-2. 读取 `.local/applied.json`。
-3. 计算本机尚未处理的 CHG。
-4. 按编号升序处理。
-5. 每处理完一个 CHG，立即写回 `.local/applied.json`。
-6. 有真实系统修改时，写入一条本机日志。
+1. 读取 `changes/index.json`。
+2. 读取所有被 index 引用的 `changes/CHG-XXXX.json`。
+3. 读取 `.local/applied.json`。
+4. 计算本机尚未处理的 CHG。
+5. 解析所有 CHG 的 `supersedes` 关系，并计算传递闭包。
+6. 剔除已被更高编号 CHG 取代的旧 CHG；不要先应用旧 CHG 再应用新 CHG。
+7. 解析 `buildsOn` 仅用于理解设计血缘，不得当作执行依赖。
+8. 只按编号升序处理仍然有效的待处理 CHG。
+9. 每处理完一个 CHG，立即写回 `.local/applied.json`。
+10. 有真实系统修改时，写入一条本机日志。
 
-对每个 CHG：
+例如：
 
-1. 先执行 `Check`。
+```text
+CHG-0008
+  ↳ CHG-0009 supersedes CHG-0008
+  ↳ CHG-0010 supersedes CHG-0009
+```
+
+最终应直接应用 `CHG-0010`，跳过 `CHG-0008` 和 `CHG-0009`，不得制造“先改错、再改回”的中间状态。
+
+对每个待处理的 CHG：
+
+1. 先执行 `check.commands`。`check.readOnly` 必须为 `true`。
 2. 已满足：记录 `already-satisfied`，不改系统。
 3. 不满足：
-   - 备份持久配置；
-   - 执行 `Apply`；
-   - 执行 `Verify`；
+   - 若 `requiresBackup=true`，先备份 `backupPaths`；
+   - 执行 `apply.steps` / `apply.commands`；
+   - `apply.selfContained` 必须为 `true`，不能假设任何旧 CHG 已经执行；
+   - 执行 `verify.commands` 并确认 `verify.expected`；
    - 通过后记录 `applied`。
-4. 冲突、高风险或无法判断：先询问；用户拒绝时记录 `skipped`。
+4. 冲突、高风险或无法判断：先询问；用户拒绝时记录 `skipped` 并写明原因。
 5. 处理失败：记录 `failed`，不得说完成。
-
-处理 `Supersedes` 的新 CHG 后，旧 CHG 本身不需要重做；以新 CHG 为准。
+6. 一个未处理 CHG 被更高编号 CHG 传递性取代时，记录 `skipped`，`reason` 写明被哪个 CHG 取代。
+7. 已经真实应用过的旧 CHG，不得事后改写状态；它保留真实历史。
 
 ## 3. 本机处理台账
 
@@ -95,7 +117,7 @@ Codex 0.155.1 不支持任意项目自定义 `/xxx` slash command；未知 `/xxx
 ```text
 applied           本机确实执行并验证通过
 already-satisfied 处理前本机已满足
-skipped           用户明确跳过
+skipped           用户明确跳过，或执行前被更高编号 CHG 传递性取代
 failed            应用失败，不能报告为完成
 ```
 
@@ -105,7 +127,7 @@ failed            应用失败，不能报告为完成
 {
   "schema": 1,
   "host": "<machine>",
-  "lastProcessed": "CHG-0006",
+  "lastProcessed": "CHG-0011",
   "changes": {
     "CHG-0001": {
       "status": "applied",
@@ -212,7 +234,7 @@ manual 格式：
 
 ## 7. 上游变更发布
 
-创建 `changes/CHG-XXXX.md` 会影响所有电脑，是特权动作，必须先判断策略和资格。
+创建 `changes/CHG-XXXX.json` 会影响所有电脑，是特权动作，必须先判断策略和资格。
 
 只要有新的 CHG 加入，无论来自 `always` 白名单自动发布，还是用户确认后发布，都必须在最终答复中明确告知用户：CHG 编号、标题、影响范围和发布依据；未完成告知前不得结束任务。
 
@@ -222,9 +244,12 @@ manual 格式：
 
 1. 本机真实状态已修改并验证成功；
 2. 本机日志已写入；
-3. 能写清 `Intent / Check / Apply / Adapt / Verify / Rollback`；
-4. 能在不同机器上安全适配；
-5. 不属于敏感、私密或毁灭性高风险变更。
+3. 符合 `schema/chg.schema.json`；
+4. 能写清 `intent / check / apply / adapt / verify / rollback`；
+5. `check.readOnly=true`；
+6. `apply.selfContained=true`；
+7. 能在不同机器上安全适配；
+8. 不属于敏感、私密或毁灭性高风险变更。
 
 不合格：
 
@@ -253,6 +278,7 @@ manual 格式：
 
 ```text
 rime / Fcitx5 输入法 = always
+foot = always
 其他领域 = ask
 ```
 
@@ -273,57 +299,74 @@ rime / Fcitx5 输入法 = always
 
 ### 发布后流程
 
-1. 确认当前机器仍满足新 CHG 的 `Check`。
-2. 创建 `changes/XXXX-<slug>.md`。
-3. 更新 `changes/INDEX.md`。
-4. 在 `.local/applied.json` 中标记新 CHG 为 `applied`。
-5. Commit。
-6. 报告 CHG 编号和本机处理结果。
+1. 确认当前机器仍满足新 CHG 的 `check`。
+2. 创建 `changes/CHG-XXXX.json`，编号必须连续且不复用。
+3. 在 `changes/index.json` 中追加 `{"id":"CHG-XXXX","file":"CHG-XXXX.json"}`。
+4. 执行 `python3 scripts/validate-changes.py`。
+5. 在 `.local/applied.json` 中标记新 CHG 为 `applied`。
+6. Commit。
+7. 报告 CHG 编号和本机处理结果。
 
-## 8. CHG 格式与不可变性
+## 8. CHG JSON v1 格式与不可变性
 
-已发布 CHG 永远 append-only：不重写、不重排、不复用编号、不删除。新方案替代旧方案时，用更高编号写 `Supersedes`；在旧方案上继续演进时写 `Builds on`。
+本仓库已完成一次用户授权的 JSON 迁移；迁移后已发布 CHG 永远 append-only：不重写、不重排、不复用编号、不删除。新方案替代旧方案时，用更高编号写 `supersedes`；在旧方案上继续演进时写 `buildsOn`。
 
-格式：
+文件命名：
 
-```markdown
-# CHG-XXXX · <标题>
+```text
+changes/CHG-XXXX.json
+changes/index.json
+schema/chg.schema.json
+schema/change-index.schema.json
+```
 
-- **ID**: CHG-XXXX
-- **Date**: YYYY-MM-DD
-- **Scope**: Omarchy / Linux / App
-- **Keywords**: ...
-- **Supersedes**: CHG-XXXX / none
-- **Builds on**: CHG-XXXX / none
-- **Manual**: <manual file> / none
+字段语义：
 
-## Intent
-- <希望达成的行为>
+| 字段 | 含义 |
+|---|---|
+| `schema` | 结构版本，当前必须为 `1`。 |
+| `id` | 唯一编号，格式 `CHG-XXXX`，与文件名一致。 |
+| `title` | 人类可读标题。 |
+| `date` | ISO `YYYY-MM-DD` 发布日期。 |
+| `scope` | 影响的系统层级或应用。 |
+| `domains` | 领域标签，用于策略与检索。 |
+| `keywords` | 可检索关键词。 |
+| `supersedes` | 被本 CHG 直接取代的旧 CHG；参与传递闭包、跳过和审计。 |
+| `buildsOn` | 设计血缘；不是执行依赖，不参与跳过计算。 |
+| `manual` | 关联 manual 文件名；无则显式 `null`。 |
+| `risk` | `low` / `medium` / `high`。 |
+| `requiresBackup` | 应用前是否必须备份。 |
+| `backupPaths` | 需要备份的持久路径。 |
+| `intent.summary` | 一句话目标。 |
+| `intent.outcomes` | 可观察的成功结果。 |
+| `check.readOnly` | 必须为 `true`。 |
+| `check.commands` | 只读检查命令。 |
+| `check.expected` | 已满足时的状态说明。 |
+| `apply.selfContained` | 必须为 `true`，不能假设旧 CHG 已执行。 |
+| `apply.steps` | 按顺序执行的修改步骤。 |
+| `apply.commands` | 具体命令或路径修改。 |
+| `adapt` | 环境适配规则。 |
+| `verify.commands` | 应用后的验证命令。 |
+| `verify.expected` | 必须满足的行为。 |
+| `rollback.steps` | 只依赖本机资源的回滚步骤。 |
 
-## Check
-- <只读判断本机是否已满足>
+校验：
 
-## Apply
-- <不满足时如何修改>
-
-## Adapt
-- <不同显示器、版本、环境如何适配>
-
-## Verify
-- <应用后必须验证什么>
-
-## Rollback
-- <只依赖本机资源如何回滚>
+```bash
+python3 scripts/validate-changes.py
 ```
 
 ## 9. 审计模式
 
 用户要求“审计”或“检查所有变更”时：
 
-1. 重新执行所有已处理 CHG 的 `Check`。
-2. 不修改系统。
-3. 报告每个 CHG 当前是否仍满足。
-4. 发现漂移时，先询问是否重新应用。
+1. 读取所有 CHG JSON 和本机台账。
+2. 计算 `supersedes` 传递闭包，找出仍然有效的 CHG。
+3. 只对有效且已处理的 CHG 执行 `check.commands`。
+4. 不把被取代旧 CHG 的失败当作当前漂移。
+5. 不修改系统。
+6. 报告每个 CHG 为仍满足、漂移、已取代、已跳过或失败。
+7. 发现有效 CHG 漂移时，先询问是否重新应用。
 
 审计不是修复；不得擅自改配置。
 
@@ -343,6 +386,8 @@ Git 发布：
 AGENTS.md
 README.md
 sync-policy.json
+schema/
+scripts/
 manual/
 changes/
 ```
@@ -355,6 +400,7 @@ logs/
 backups/
 真实系统配置文件
 密钥、账号和私人数据
+changes/*.md
 ```
 
 修改 `.local/`、`logs/`、`backups/` 不需要 Git 提交，因为它们不入 Git。

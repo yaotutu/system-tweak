@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "id": "CHG-0009",
+  "title": "Foot 超链接快捷键改为 Super+Shift+O",
+  "date": "2026-09-24",
+  "scope": [
+    "Linux",
+    "App"
+  ],
+  "domains": [
+    "foot",
+    "hyprland"
+  ],
+  "keywords": [
+    "foot",
+    "URL",
+    "超链接",
+    "快捷键",
+    "Super",
+    "jump label"
+  ],
+  "supersedes": [
+    "CHG-0008"
+  ],
+  "buildsOn": [],
+  "manual": "foot-url-launch.md",
+  "risk": "low",
+  "requiresBackup": true,
+  "backupPaths": [
+    "~/.config/foot/foot.ini"
+  ],
+  "intent": {
+    "summary": "把 Foot 的 URL jump label 入口改为 Super+Shift+O。",
+    "outcomes": [
+      "Super + Shift + O 进入 URL 模式。",
+      "URL 旁显示跳转标签。",
+      "输入标签后打开链接并退出 URL 模式。"
+    ]
+  },
+  "check": {
+    "readOnly": true,
+    "commands": [
+      "grep -n \"^show-urls-launch=\" ~/.config/foot/foot.ini",
+      "foot -o \"key-bindings.show-urls-launch=Super+Shift+o\" --check-config"
+    ],
+    "expected": [
+      "show-urls-launch=Super+Shift+o 存在。",
+      "配置校验通过。",
+      "目标系统的窗口管理器没有占用 Super + Shift + O。"
+    ]
+  },
+  "apply": {
+    "selfContained": true,
+    "steps": [
+      "备份 foot.ini。",
+      "将 show-urls-launch 改为 Super+Shift+o。",
+      "检查目标环境的全局快捷键冲突。",
+      "校验配置并打开新的 Foot 窗口测试。"
+    ],
+    "commands": [
+      "foot --config=\"$HOME/.config/foot/foot.ini\" --check-config"
+    ]
+  },
+  "adapt": [
+    "如果目标机器全局占用 Super + Shift + O，不要强行应用。",
+    "检查冲突时不能只 grep 字符串。",
+    "不同键盘布局应先确认该组合确实发送给 Foot。"
+  ],
+  "verify": {
+    "commands": [
+      "foot --config=\"$HOME/.config/foot/foot.ini\" --check-config"
+    ],
+    "expected": [
+      "配置校验通过。",
+      "Super + Shift + O 能显示 URL 跳转标签。",
+      "输入标签后浏览器打开对应 URL。"
+    ]
+  },
+  "rollback": {
+    "steps": [
+      "恢复本机应用该变更前的 foot.ini 备份。",
+      "或改回原先可用组合。",
+      "重新执行 foot --check-config 并打开新窗口确认。"
+    ]
+  }
+}

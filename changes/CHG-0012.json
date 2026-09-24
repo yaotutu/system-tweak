@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "id": "CHG-0012",
+  "title": "Fcitx5 Mellow theme pre-rendered PNG performance fix",
+  "date": "2026-09-24",
+  "scope": ["Linux", "App"],
+  "domains": ["fcitx5", "rime", "theme", "performance"],
+  "keywords": ["fcitx5", "5.1.22", "rime", "theme", "SVG", "PNG", "repaint", "candidate window", "lag", "CPU"],
+  "supersedes": [],
+  "buildsOn": ["CHG-0011"],
+  "manual": "fcitx5-522-svg-theme-performance.md",
+  "risk": "low",
+  "requiresBackup": true,
+  "backupPaths": [
+    "~/.config/fcitx5/conf/classicui.conf"
+  ],
+  "intent": {
+    "summary": "让 Fcitx5/Rime 在主题不变的情况下，避免 5.1.22 对 SVG 的重复栅格化造成的输入卡顿。",
+    "outcomes": [
+      "视觉仍为 Mellow Youlan。",
+      "panel 与 highlight 使用 PNG 位图，而不是 SVG。",
+      "候选窗不再走 5.1.22 的原生 SVG 路径。",
+      "Fcitx5 服务保持 active。",
+      "Rime 仍是当前输入法。"
+    ]
+  },
+  "check": {
+    "readOnly": true,
+    "commands": [
+      "test -d ~/.local/share/fcitx5/themes/mellow-youlan-png",
+      "grep \"^Theme=\" ~/.config/fcitx5/conf/classicui.conf",
+      "systemctl --user is-active omarchy-fcitx5.service",
+      "fcitx5-remote -n"
+    ],
+    "expected": [
+      "mellow-youlan-png 目录存在。",
+      "Theme=mellow-youlan-png。",
+      "Fcitx5 服务 active。",
+      "fcitx5-remote -n 返回 rime。",
+      "实际连续输入中文时不再出现可感知的输入卡顿。"
+    ]
+  },
+  "apply": {
+    "selfContained": true,
+    "steps": [
+      "保留 mellow-youlan 作为回滚来源。",
+      "用 rsvg-convert 将 panel.svg 和 highlight.svg 预渲染为 PNG。",
+      "创建 mellow-youlan-png 主题目录。",
+      "把 theme.conf 中 Image 从 SVG 改成 PNG。",
+      "在 classicui.conf 中把 Theme 改为 mellow-youlan-png。",
+      "重载 Fcitx5。"
+    ],
+    "commands": [
+      "rsvg-convert -o panel.png panel.svg",
+      "rsvg-convert -o highlight.png highlight.svg",
+      "fcitx5-remote -r"
+    ]
+  },
+  "adapt": [
+    "暗色桌面可生成并选择 mellow-youlan-dark-png。",
+    "没有 rsvg-convert 时，可用任何能按原始尺寸导出 RGBA PNG 的渲染器。",
+    "若未来 Fcitx5 修复了 SVG 缓存问题，可由更高编号 CHG 取代本 CHG。",
+    "如果目标电脑无法使用 PNG，则退回 SVG 并接受 5.1.22 的性能代价。"
+  ],
+  "verify": {
+    "commands": [
+      "systemctl --user is-active omarchy-fcitx5.service",
+      "fcitx5-remote -n",
+      "grep \"^Theme=\" ~/.config/fcitx5/conf/classicui.conf"
+    ],
+    "expected": [
+      "服务 active。",
+      "fcitx5-remote -n 返回 rime。",
+      "Theme=mellow-youlan-png。",
+      "连续输入中文时不再出现卡顿。"
+    ]
+  },
+  "rollback": {
+    "steps": [
+      "将 ~/.config/fcitx5/conf/classicui.conf 的 Theme 改回 mellow-youlan 或其他受支持主题。",
+      "执行 fcitx5-remote -r。",
+      "如需清理，可移除 mellow-youlan-png 目录。"
+    ]
+  }
+}

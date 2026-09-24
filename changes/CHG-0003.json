@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "id": "CHG-0003",
+  "title": "Workspace 基础导航",
+  "date": "2026-09-23",
+  "scope": [
+    "Omarchy"
+  ],
+  "domains": [
+    "hyprland",
+    "workspace"
+  ],
+  "keywords": [
+    "workspace",
+    "工作区",
+    "方向键",
+    "Ctrl+Left",
+    "Ctrl+Right",
+    "Super+Tab"
+  ],
+  "supersedes": [],
+  "buildsOn": [],
+  "manual": "workspace-navigation.md",
+  "risk": "low",
+  "requiresBackup": true,
+  "backupPaths": [
+    "~/.config/hypr/bindings.lua"
+  ],
+  "intent": {
+    "summary": "建立基础 Workspace 左右导航，并保留 Omarchy 默认工作区切换。",
+    "outcomes": [
+      "Ctrl + Left 切换上一个 workspace。",
+      "Ctrl + Right 切换下一个 workspace。",
+      "Super + Tab 与 Super + Shift + Tab 使用 Omarchy 默认切换。",
+      "不保留 Super + Up 的默认方向焦点绑定。",
+      "保留 Ctrl + Up 给全工作区总览。"
+    ]
+  },
+  "check": {
+    "readOnly": true,
+    "commands": [
+      "omarchy menu keybindings --print | grep -E \"CTRL \\+ (LEFT|RIGHT)|SUPER( SHIFT)? \\+ (TAB|UP)\""
+    ],
+    "expected": [
+      "CTRL + LEFT 和 CTRL + RIGHT 已注册为 workspace 导航。",
+      "Super + Tab 保留 Omarchy 默认行为。",
+      "Super + Up 不再绑定默认方向焦点。"
+    ]
+  },
+  "apply": {
+    "selfContained": true,
+    "steps": [
+      "备份 bindings.lua。",
+      "绑定 CTRL + LEFT 到上一个 workspace。",
+      "绑定 CTRL + RIGHT 到下一个 workspace。",
+      "保留 Omarchy 默认 Super + Tab / Super + Shift + Tab。",
+      "使用 hl.unbind(\"SUPER + UP\") 移除默认方向焦点。",
+      "执行 hyprctl reload。"
+    ],
+    "commands": [
+      "hyprctl reload"
+    ]
+  },
+  "adapt": [
+    "若目标电脑已有更重要的方向键或 Super + Tab 使用习惯，先询问用户。",
+    "该方案与显示器和主机名无关。"
+  ],
+  "verify": {
+    "commands": [
+      "hyprctl configerrors",
+      "omarchy menu keybindings --print"
+    ],
+    "expected": [
+      "无配置错误。",
+      "左右方向键切换 workspace 顺序正确。",
+      "Super + Tab 保留默认行为。"
+    ]
+  },
+  "rollback": {
+    "steps": [
+      "恢复本机应用该变更前的 bindings.lua 备份。",
+      "执行 hyprctl reload。"
+    ]
+  }
+}

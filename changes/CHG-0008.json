@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "id": "CHG-0008",
+  "title": "Foot 快捷打开超链接",
+  "date": "2026-09-24",
+  "scope": [
+    "Linux",
+    "App"
+  ],
+  "domains": [
+    "foot"
+  ],
+  "keywords": [
+    "foot",
+    "终端",
+    "URL",
+    "超链接",
+    "jump label",
+    "show-urls-launch"
+  ],
+  "supersedes": [],
+  "buildsOn": [],
+  "manual": "foot-url-launch.md",
+  "risk": "low",
+  "requiresBackup": true,
+  "backupPaths": [
+    "~/.config/foot/foot.ini"
+  ],
+  "intent": {
+    "summary": "在 Foot 中启用 URL jump label 模式，用快捷键快速打开可见链接。",
+    "outcomes": [
+      "Ctrl + Shift + O 进入 URL 模式。",
+      "所有可见 URL 显示短跳转标签。",
+      "输入标签组合后，用默认浏览器打开链接并退出 URL 模式。"
+    ]
+  },
+  "check": {
+    "readOnly": true,
+    "commands": [
+      "grep -n \"^show-urls-launch=\" ~/.config/foot/foot.ini",
+      "foot --config=\"$HOME/.config/foot/foot.ini\" --check-config"
+    ],
+    "expected": [
+      "show-urls-launch=Control+Shift+o 存在。",
+      "配置校验通过。",
+      "Ctrl + Shift + O 能显示可见 URL 的跳转标签。"
+    ]
+  },
+  "apply": {
+    "selfContained": true,
+    "steps": [
+      "备份 foot.ini。",
+      "在 [key-bindings] 段中加入 show-urls-launch=Control+Shift+o。",
+      "校验配置并打开新的 Foot 窗口测试。"
+    ],
+    "commands": [
+      "foot --config=\"$HOME/.config/foot/foot.ini\" --check-config"
+    ]
+  },
+  "adapt": [
+    "若要换用其他快捷键，避免与 [url].label-letters 冲突。",
+    "若目标系统没有默认浏览器，该功能无法打开 URL。",
+    "旧 Foot 版本不支持该选项时，先升级或询问用户。"
+  ],
+  "verify": {
+    "commands": [
+      "foot --config=\"$HOME/.config/foot/foot.ini\" --check-config"
+    ],
+    "expected": [
+      "配置校验通过。",
+      "可见 URL 旁出现跳转标签。",
+      "输入标签后浏览器打开对应 URL。"
+    ]
+  },
+  "rollback": {
+    "steps": [
+      "恢复本机应用该变更前的 foot.ini 备份。",
+      "或删除 show-urls-launch 行。",
+      "重新执行 foot --check-config 并打开新窗口确认。"
+    ]
+  }
+}
