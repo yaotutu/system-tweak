@@ -13,6 +13,14 @@
         "default.custom.yaml",
         "rime_ice.custom.yaml"
       ]
+    },
+    "foot": {
+      "mode": "always",
+      "reason": "All verified Foot terminal behavior is shared by default.",
+      "match": [
+        "foot",
+        "foot.ini"
+      ]
     }
   }
 }

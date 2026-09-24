@@ -107,7 +107,7 @@ system-tweak/
 
 ## Publication policy
 
-`sync-policy.json` decides when new CHGs may be published without an additional question. The current policy sets `rime` to `always`; every other domain defaults to `ask`.
+`sync-policy.json` decides when new CHGs may be published without an additional question. The current policy sets `rime` and `foot` to `always`; every other domain defaults to `ask`.
 
 A whitelist never authorizes unsafe, unverified, sensitive, private, or destructive changes. It only removes the routine confirmation for that domain.
 
