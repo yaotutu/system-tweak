@@ -30,6 +30,19 @@ $audit
 
 Arbitrary project-local `/xxx` slash commands are not supported by Codex 0.155.1. Use `$skill-name` instead.
 
+## Git synchronization discipline
+
+All repository workflows keep the remote and local branch coherent:
+
+1. At the start of every task, run `git fetch origin` when a remote is configured.
+2. For longer work, fetch again before key phases such as change processing, auditing, CHG publication, or commit preparation.
+3. If the remote has new commits:
+   - with a clean working tree and non-diverged local branch, pull using `git pull --ff-only`;
+   - with a dirty or diverged branch, stop and ask instead of discarding, stashing, or overwriting anything.
+4. After committing any Git-published file, immediately push the current branch.
+5. Never force push. If push is rejected, fetch and ask how to resolve the divergence.
+6. Local-only state under `.local/`, `logs/`, and `backups/` is neither committed nor pushed.
+
 ## CHG data contract
 
 Every change is a JSON object under `changes/`, matching `schema/chg.schema.json`:

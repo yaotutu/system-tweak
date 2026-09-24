@@ -66,6 +66,19 @@ $audit
 Codex 0.155.1 不支持任意项目自定义 `/xxx` slash command；未知 `/xxx` 会被 TUI 当作未识别命令。因此本项目使用 `$skill` 显式调用，或使用普通自然语言触发技能描述。
 如果词义模糊，应先确认用户意图，不得擅自执行。
 
+### Git 同步节奏
+
+1. 每个 Agent 任务开始时，如果配置了远端且网络可用，先执行 `git fetch origin` 检查远端更新。
+2. 长任务跨多个逻辑阶段时，在关键阶段开始前再次 `git fetch origin`；尤其是 `$sync-changes`、`$audit`、处理 CHG、发布 CHG 或准备提交前。
+3. 远端有新提交时：
+   - 工作区干净且本地分支未分叉：使用 `git pull --ff-only` 同步；
+   - 工作区不干净或本地/远端分叉：不得丢弃、stash 或覆盖本地修改，必须先报告并询问用户；
+   - 同步后重新运行 `python3 scripts/validate-changes.py`。
+4. 修改并提交任何 Git 发布范围内的文件后，必须立即 `git push` 到当前分支对应的远端。不得只 commit 不 push。
+5. `.local/`、`logs/`、`backups/` 属于本机状态，不提交、不 push。
+6. Push 被拒绝时，先 `git fetch origin` 判断原因；分叉时必须询问用户，禁止 force push。
+7. 本规则只约束 Git 跟踪内容；没有产生共享 CHG/manual/规则/脚本变更的纯本机系统修改不要求 push。
+
 ## 2. 应用待处理变更
 
 适用：新电脑初始化、已有电脑补齐状态、检查缺失配置。
