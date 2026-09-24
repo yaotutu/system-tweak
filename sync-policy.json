@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "defaultMode": "ask",
+  "domains": {
+    "rime": {
+      "mode": "always",
+      "reason": "All verified Rime/Fcitx5 input behavior is shared by default.",
+      "match": [
+        "rime",
+        "fcitx5",
+        "input-method",
+        "shift_toggle.lua",
+        "default.custom.yaml",
+        "rime_ice.custom.yaml"
+      ]
+    }
+  }
+}

@@ -84,9 +84,16 @@ system-tweak/
 |---|---|---:|---:|
 | Local log | Always, after a real modification | No | No |
 | Manual entry | Durable explanation or pitfall discovered | Yes | No, unless sensitive/uncertain |
-| New CHG | A verified state is worth sharing | Yes | Yes, always |
+| New CHG outside whitelist | A verified state is worth sharing | Yes | Yes, always |
+| New CHG in `always` whitelist | Verified, safe change in an always domain | Yes | No, unless high-risk/uncertain |
 | Local ledger | After each CHG is processed | No | No |
 | Backup | Before modifying persistent config | No | No |
+
+## Publication policy
+
+`sync-policy.json` decides when new CHGs may be published without an additional question. The current policy sets `rime` to `always`; every other domain defaults to `ask`.
+
+A whitelist never authorizes unsafe, unverified, sensitive, private, or destructive changes. It only removes the routine confirmation for that domain.
 
 ## Excluded from publication
 

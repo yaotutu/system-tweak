@@ -150,6 +150,52 @@ Not suitable:
 - high-risk actions involving disk, network, security, power, or destructive package operations, unless the user explicitly asks to publish them;
 - anything the user declined to share.
 
+### Publication policy
+
+Publication behavior is controlled by `sync-policy.json`.
+
+Modes:
+
+- `always`
+  - verified changes in this domain are published automatically
+  - the user may still veto a specific change, but AI does not need to ask in advance
+- `ask`
+  - AI must ask before publishing every new CHG
+- `never`
+  - AI must not publish changes in this domain
+  - a user may still explicitly override this by naming the domain and requesting publication
+
+The default top-level mode is `ask`. Domains override the default.
+
+A domain never authorizes an unsafe, unverified, sensitive, or destructive change. Automatic publication still requires:
+
+1. the local system modification to be verified;
+2. the local log to be written;
+3. the change to have complete Intent/Check/Apply/Adapt/Verify/Rollback;
+4. the current machine to satisfy the new `Check`.
+
+If an always-domain change is high risk, secret-dependent, private, destructive, or cannot be adapted safely, downgrade it to `ask` or `never` behavior and explain why.
+
+### Policy file
+
+`sync-policy.json` is published with the repository so every machine uses the same publication policy. Its shape is:
+
+```json
+{
+  "schema": 1,
+  "defaultMode": "ask",
+  "domains": {
+    "rime": {
+      "mode": "always",
+      "reason": "...",
+      "match": ["rime", "fcitx5", "..."]
+    }
+  }
+}
+```
+
+Changing a domain from `always` to a restrictive mode affects future changes only; it never rewrites published CHGs.
+
 ### User-initiated publication
 
 If the user says “sync this”, “add this to changes”, “all computers need this”, or equivalent, first restate the proposed CHG and ask:
@@ -160,7 +206,13 @@ Create the file only after an explicit confirmation.
 
 ### AI-detected candidate
 
-After a local modification is verified and logged, if it may be worth sharing, ask once:
+After a local modification is verified and logged:
+
+- `ask`: ask before publishing.
+- `always`: publish automatically if the change is verified, safe, and fully documentable. The completion report must say it was published under the domain whitelist.
+- `never`: do not publish.
+
+For `ask`, ask once:
 
 > The modification is verified: ...
 > Recommendation: share / do not share / defer
