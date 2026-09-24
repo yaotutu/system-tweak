@@ -16,7 +16,7 @@ Hyprland's `e-1` / `e+1` selectors traverse existing workspaces on the current m
 
 Enumerate the positive, non-special workspaces on the current monitor, sort by ID, find the active workspace's index, and dispatch to `index ± 1` only when that index exists. Return immediately when the target would be outside the list.
 
-The executable form is in CHG-0006.
+The executable form is in CHG-0006. CHG-0006 builds on CHG-0003 and changes only the left/right switching behavior; it does not supersede the other outcomes of CHG-0003.
 
 ## Pitfalls
 

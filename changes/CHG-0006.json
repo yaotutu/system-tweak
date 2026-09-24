@@ -18,9 +18,7 @@
     "no wrap",
     "已有 Workspace"
   ],
-  "supersedes": [
-    "CHG-0003"
-  ],
+  "supersedes": [],
   "buildsOn": [
     "CHG-0003"
   ],
