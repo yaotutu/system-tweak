@@ -1,31 +1,34 @@
 # Foot URL launch
 
 - **Verified**: yes
-- **Keywords**: foot, URL, hyperlink, jump label, show-urls-launch, shortcut
-- **Related changes**: CHG-0008, CHG-0009
+- **Keywords**: foot, URL, hyperlink, jump label, show-urls-launch, shortcut, Obsidian conflict
+- **Related changes**: CHG-0008, CHG-0009, CHG-0010
 
 ## Problem
 
-Foot does not provide a single obvious way to reach a link from the keyboard when the mouse is unavailable or awkward to use. The built-in URL mode solves this, but it is easy to miss because the keybinding is not shown in the terminal UI.
+Foot needs a keyboard entry point for its URL jump-label mode, but a chosen shortcut can silently collide with a window manager or global application shortcut before Foot receives it.
 
 ## Root cause
 
-Foot has a native `show-urls-launch` action. It enters URL mode, where currently visible URLs are tagged with short jump labels; typing a label sequence launches that URL. The upstream default shortcut is `Control+Shift+o`, but many terminal-native bindings conflict with shell or TUI conventions. `Super+Shift+o` is a better terminal-local choice when no window manager binding claims it.
+Foot has a native `show-urls-launch` action. It enters URL mode, where currently visible URLs are tagged with short jump labels; typing a label sequence launches that URL.
+
+On this Omarchy system, `Super+Shift+O` is reserved for launching/focusing Obsidian. `hyprctl binds` represents this binding as `modmask: 65`, `key: O`, and `description: Obsidian`; it does not spell out `SUPER + SHIFT + O`. A text grep for the spelled-out form can therefore miss the real conflict.
 
 ## Correct approach
 
-Use `Super+Shift+o` in `[key-bindings]`:
+Use the Foot native default in `[key-bindings]`:
 
 ```ini
-show-urls-launch=Super+Shift+o
+show-urls-launch=Control+Shift+o
 ```
 
-Then press `Super + Shift + O` in a Foot window, type the jump label shown next to a URL, and it opens in the default browser. Keep the key name lowercase (`o`) because Shift is listed as a modifier; do not write `O`.
+Then press `Ctrl + Shift + O` in a focused Foot window and type the jump label shown next to a URL. It opens in the default browser. Keep the key name lowercase (`o`) because Shift is listed as a modifier.
 
 ## Pitfalls
 
-- A Foot keybinding only fires while the Foot window is focused. If the window manager or another global app captures `Super+Shift+O` first, Foot never receives it.
-- Before changing the binding, check the window manager for existing global bindings. A terminal-local `Super` shortcut should not be used if the window manager already owns that combination.
+- `Super+Shift+O` is already used by Omarchy for Obsidian on this machine. Do not assign it to a Foot action.
+- `hyprctl binds` can show modifiers as a numeric `modmask` instead of `SUPER + SHIFT`. Check both the numeric mask and the plain key name, or inspect the relevant binding source.
+- A Foot keybinding only fires while the Foot window is focused. If the window manager or another global app captures the combination first, Foot never receives it.
 - `show-urls-persistent` is different: it keeps URL mode open after opening a link. This setting only enters and exits once per activation.
 - If a URL is hidden or out of view, URL mode will not find it; the action only tags currently visible URLs.
 - Do not use a single-letter keybinding that clashes with `[url].label-letters`, as it can make some links unreachable.
@@ -33,4 +36,4 @@ Then press `Super + Shift + O` in a Foot window, type the jump label shown next 
 
 ## Environment notes
 
-Verified with Foot 1.28.0 on Wayland/Omarchy. The latest verified binding is `Super+Shift+o`; `Super` is accepted as a valid virtual modifier. Also verify that no Hyprland binding claims `Super+Shift+O` on the target machine before applying.
+Verified with Foot 1.28.0 and Omarchy on Wayland. The validated binding is `Control+Shift+o`; `Super+Shift+O` remains reserved for Obsidian.

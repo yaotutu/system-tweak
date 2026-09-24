@@ -13,3 +13,4 @@ This file lists upstream changes. It is append-only: never rewrite, renumber, or
 | CHG-0007 | Foot 选中文本自动复制 | 2026-09-24 | - | - |
 | CHG-0008 | Foot 快捷打开超链接 | 2026-09-24 | - | - |
 | CHG-0009 | Foot 超链接快捷键改为 Super+Shift+O | 2026-09-24 | - | CHG-0008 |
+| CHG-0010 | Foot 超链接快捷键恢复 Ctrl+Shift+O | 2026-09-24 | CHG-0008 | CHG-0009 |
