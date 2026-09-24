@@ -1,73 +1,105 @@
-# AGENTS.md — system-tweak 项目规则
+# AGENTS.md — system-tweak project rules
 
-本仓库用“上游变更 + 本机台账”实现多台 Omarchy 电脑的状态收敛：
+This repository separates machine history, shared explanations, and shared state changes:
 
 ```text
-changes/ = 共享的有序变更清单
-.local/  = 本机已处理台账
-logs/    = 本机人类可读修改历史
-backups/ = 本机修改前备份
+logs/     = mandatory local history, never published
+manual/   = shared explanations and experience, published by default
+changes/  = shared executable state changes, published only after explicit user confirmation
+.local/   = local processed-change ledger, never published
+backups/  = local pre-change backups, never published
 ```
 
-Git 只同步 `changes/` 与规则文档；Git 不复制真实系统配置，不同步本机台账、日志或备份。
+Git never copies a real system configuration file. It publishes only the documents that teach or describe a change.
 
-## 1. 开始工作
+## 1. Starting work
 
-当用户在本目录提出以下请求时，必须执行本规则：
+For any request that may modify the system, software, input method, scaling, service, or application compatibility:
 
-- 修改系统、软件、输入法、显示缩放或服务；
-- 安装、升级、卸载或排查某个应用；
-- 初始化新电脑；
-- 检查或补齐缺失配置；
-- 处理兼容性问题。
+1. Read `changes/INDEX.md`.
+2. Read `.local/applied.json`.
+3. Compute changes not yet processed by this machine.
+4. Read relevant `manual/` documents and missing `changes/` documents.
+5. Process pending changes in numeric order.
+6. After each change, immediately update `.local/applied.json`.
 
-开始处理前：
+Automation exists only during this AI session. Do not create a background service, autostart entry, timer, or hook to perform these rules.
 
-1. 读取 `changes/INDEX.md`。
-2. 读取 `.local/applied.json`。
-3. 计算本机尚未处理的 CHG。
-4. 按编号顺序处理。
-5. 每处理完一个 CHG，立即写回 `.local/applied.json`。
+## 2. Local machine history
 
-自动化只发生在 AI 会话中；不得创建后台服务、开机自启或定时任务来执行本规则。
+Every real system modification must be recorded locally.
 
-## 2. 变更处理状态
+After a real modification:
 
-`changes/` 中的每个文件代表一次上游变更。`Active` 不再使用；所有已发布 CHG 都属于上游目标。
+1. Ensure the intended behavior is verified.
+2. Write one entry in the current local log.
+3. Record modified paths, commands, packages, backup paths, and verification output.
+4. Never include secrets, credentials, cookies, tokens, or private account data.
+5. If the task stops after a real modification, immediately write a `⚠️ partial` entry.
 
-本机台账状态：
+`logs/` is mandatory and local. It is never committed to Git.
 
-- `applied`
-  - 本机确实执行了变更
-- `already-satisfied`
-  - 本机在处理前已经满足，无需修改
-- `skipped`
-  - 用户明确决定本机跳过
-- `failed`
-  - 应用失败，不能标记为完成
+Format:
 
-## 3. 处理单个 CHG
+```markdown
+## <YYYY-MM-DD HH:MM> · <short summary>
 
-对每个待处理 CHG：
+- **Category**: package / configuration / service / autostart
+- **Details**: paths, packages, commands, backup locations
+- **Verification**: command output or manual test result
+- **Status**: ✅ complete / ⚠️ partial / ❌ rolled back
+```
 
-1. 执行其 `Check`
-2. 若已满足：
-   - 标记 `already-satisfied`
-   - 不修改系统
-3. 若不满足：
-   - 先备份涉及的持久配置
-   - 执行 `Apply`
-   - 执行 `Verify`
-   - 验证通过后标记 `applied`
-4. 若与现有配置冲突、高风险或无法判断：
-   - 先询问用户
-   - 用户要求跳过时标记 `skipped`
-5. 每处理完一个 CHG，立刻写入 `.local/applied.json`
-6. 只有发生实际系统修改时，才写入本机 `logs/YYYY-MM.md`
+## 3. Shared manual
 
-## 4. `.local/applied.json`
+`manual/` is the default-shared experience base. It explains causes, correct approaches, and pitfalls. It is not an action dispatcher and must never by itself cause a system modification.
 
-格式：
+Write or update manual entries when:
+
+- debugging produced a conclusion worth retaining;
+- a shared rule, root cause, or trap was discovered;
+- a change revealed a distinction important enough to explain later.
+
+Manual entries may be updated freely. They are not immutable. They must obey:
+
+1. No secrets, credentials, account data, or private data.
+2. No complete copies of real system configuration files.
+3. Machine-specific values should be labeled examples and must say how to detect the current machine.
+4. Unverified conclusions must be marked `Draft`.
+5. Every entry lists searchable `Keywords`.
+6. Every entry links its related `CHG-XXXX` documents when applicable.
+7. Update `manual/INDEX.md` when adding or removing an entry.
+
+Manual format:
+
+```markdown
+# <Topic>
+
+- **Verified**: yes / draft
+- **Keywords**: ...
+- **Related changes**: CHG-XXXX / none
+
+## Problem
+## Root cause
+## Correct approach
+## Pitfalls
+## Environment notes
+```
+
+Manual documents are published by default. They explain knowledge; they do not authorize a state change.
+
+## 4. Local processed ledger
+
+`.local/applied.json` records which upstream changes this machine has already handled.
+
+Permitted statuses:
+
+- `applied`: this machine modified the system and verification passed.
+- `already-satisfied`: the machine already satisfied the change before processing it.
+- `skipped`: the user explicitly skipped it for this machine.
+- `failed`: processing failed; this must never be reported as complete.
+
+Format:
 
 ```json
 {
@@ -84,160 +116,135 @@ Git 只同步 `changes/` 与规则文档；Git 不复制真实系统配置，不
 }
 ```
 
-要求：
+Rules:
 
-1. 只保存在本机，不入 Git。
-2. 每处理完一个 CHG 立即更新，不得等全部完成后再写。
-3. `lastProcessed` 使用本机已处理的最高编号。
-4. `backup` 记录本机为该变更创建的备份路径；无备份时为 `null`。
-5. `skipped` 必须写明用户原因。
-6. `failed` 必须写明失败原因。
-7. 修改 `.local/applied.json` 不需要 Git 提交，因为它不入 Git。
+1. Update the ledger immediately after each CHG, not at the end of a batch.
+2. `lastProcessed` is the highest processed ID.
+3. Every `skipped` entry must include the user's reason.
+4. Every `failed` entry must include the failure reason.
+5. If a change made no modification because it was already satisfied, use `already-satisfied`.
+6. `.local/` is local and never committed.
 
-## 5. 上游变更准入与确认
+## 5. Executable shared changes
 
-不是所有本机修改都应进入 `changes/`。进入上游意味着所有目标电脑都会尝试收敛到该变更，因此必须经过用户发起或二次确认。
+`changes/` contains state changes that other machines should apply. Creating a change is a privileged action because it may affect every machine.
 
-### 允许发布的范围
+### Eligible changes
 
-优先进入上游：
+Suitable:
 
-- 用户明确说“这个要同步 / 所有电脑都要有”的已验证变更；
-- 用户确认 AI 提出建议的已验证变更；
-- 明显是跨电脑复用价值的系统性习惯，例如：
-  - 桌面操作方式；
-  - 输入法行为；
-  - 应用兼容性经验；
-  - 已验证的环境变量修正；
-  - 高风险变更之外的常用软件安装方式。
+- verified desktop behavior;
+- input-method behavior;
+- application compatibility fixes;
+- environment-variable corrections;
+- common software installation and setup patterns;
+- other reusable system state with clear Intent/Check/Apply/Verify/Rollback.
 
-不应进入上游：
+Not suitable:
 
-- 未验证成功的尝试；
-- 临时调试状态；
-- 明显只适用于本机的硬件值或网络值；
-- 个人数据、密钥、账号状态；
-- 一次性清理命令；
-- 高风险操作，例如磁盘、网络、安全、电源、删除软件包，除非用户明确要求同步；
-- 用户拒绝同步的本机修改。
+- unverified experiments;
+- temporary debugging state;
+- machine-only hardware or network values;
+- personal data, secrets, or account state;
+- one-off cleanup commands;
+- high-risk actions involving disk, network, security, power, or destructive package operations, unless the user explicitly asks to publish them;
+- anything the user declined to share.
 
-### 用户主动发起
+### User-initiated publication
 
-用户说：
+If the user says “sync this”, “add this to changes”, “all computers need this”, or equivalent, first restate the proposed CHG and ask:
 
-- “这个要同步”
-- “把这个加入 changes”
-- “所有电脑都要有”
-- “把这个经验同步给其他电脑”
+> Will add CHG-XXXX “<title>”. It will affect all other computers. Confirm publication?
 
-AI 必须先复述将要发布的 CHG 内容，并明确询问：
+Create the file only after an explicit confirmation.
 
-> 将新增 CHG-XXXX《标题》。它会影响其他所有电脑。确认发布吗？
+### AI-detected candidate
 
-用户确认后，才能创建变更文件。
+After a local modification is verified and logged, if it may be worth sharing, ask once:
 
-### AI 主动检测
+> The modification is verified: ...
+> Recommendation: share / do not share / defer
+> Reason: ...
+> Publish it as an upstream change?
 
-本机一次真实修改完成、验证通过、日志写入后，如果 AI 判断该变更可能适合同步，必须主动询问一次：
+Create a CHG only after an explicit yes. If the user declines or does not answer, keep it local only.
 
-> 本次修改已验证成功：……
-> 建议：{建议同步 / 不建议同步 / 暂缓}
-> 原因：……
-> 是否发布为上游变更，让其他电脑也应用？
+### Publication procedure
 
-只有用户明确回答同意，AI 才能创建 CHG。用户拒绝或未答复时，只能保留为本机修改，禁止写入 `changes/`。
+1. Confirm the current machine still satisfies the proposed `Check`.
+2. Create `changes/XXXX-<slug>.md`.
+3. Update `changes/INDEX.md`.
+4. Mark the new CHG as `applied` in `.local/applied.json`.
+5. Commit the update.
+6. Report the CHG number and the current-machine handling result.
 
-### 发布后的操作
+## 6. Change format
 
-1. 用户确认后，按下一节创建 CHG。
-2. 在本机 `.local/applied.json` 中立刻标记该新 CHG。
-3. 更新 `changes/INDEX.md`。
-4. Git 提交。
-5. 向用户报告 CHG 编号和处理结果。
+Published changes are append-only. Never rewrite, renumber, repurpose, or delete a published CHG. If a later design invalidates it, publish a higher-numbered CHG with `Supersedes`.
 
-## 6. 新增上游变更格式
-
-新 CHG 规则：
-
-1. 编号全局递增，使用四位数字，例如 `CHG-0007`。
-2. 文件名格式为 `changes/0007-<slug>.md`。
-3. 已发布的 CHG 永远不允许重写、重排或删除。
-4. 如果新方案取代旧方案，在新 CHG 中写 `Supersedes: CHG-XXXX`。
-5. 如果新方案基于旧方案继续演进，在新 CHG 中写 `Builds on: CHG-XXXX`。
-6. 新 CHG 必须包含 `Intent`、`Check`、`Apply`、`Adapt`、`Verify`、`Rollback`。
-7. 新 CHG 必须来自一次已验证成功的实际系统状态，不得凭空创建。
-8. 发布前必须再次确认本机实际状态仍满足该 CHG 的 `Check`。
-
-上游变更文件格式如下：
+Use:
 
 ```markdown
-# CHG-XXXX · <标题>
+# CHG-XXXX · <title>
 
 - **ID**: CHG-XXXX
-- **Date**: <YYYY-MM-DD>
-- **Scope**: <Omarchy / Linux / App>
-- **Keywords**: <搜索关键词>
-- **Supersedes**: <CHG-XXXX / none>
-- **Builds on**: <CHG-XXXX / none>
+- **Date**: YYYY-MM-DD
+- **Scope**: Omarchy / Linux / App
+- **Keywords**: ...
+- **Supersedes**: CHG-XXXX / none
+- **Builds on**: CHG-XXXX / none
+- **Manual**: <manual file> / none
 
 ## Intent
-- <希望达成的行为>
+- <desired behavior>
 
 ## Check
-- <如何判断本机是否已满足；必须只读>
+- <read-only test for whether this machine already satisfies it>
 
 ## Apply
-- <不满足时如何修改>
+- <how to modify the machine when it does not satisfy it>
 
 ## Adapt
-- <不同显示器、版本、硬件或环境下的适配方法>
+- <how to adapt to hardware, version, or environment differences>
 
 ## Verify
-- <完成后必须检查什么>
+- <required checks after applying>
 
 ## Rollback
-- <出问题时如何恢复；不得依赖另一台机器的备份>
+- <how to restore this machine, without another machine's backups>
 ```
 
-## 7. 审计模式
+## 7. Applying pending changes
 
-用户要求“审计”或“检查所有变更”时：
+For each pending CHG:
 
-1. 重新执行所有已处理 CHG 的 `Check`
-2. 不修改系统
-3. 报告每个 CHG 当前是否仍满足
-4. 若发现状态漂移，询问用户是否重新应用对应 CHG
+1. Run `Check` first.
+2. Already satisfied: record `already-satisfied`; do not modify the system.
+3. Not satisfied:
+   - back up persistent files into `backups/YYYYMMDD-HHMM-<slug>/`;
+   - run `Apply`;
+   - run `Verify`;
+   - record `applied`.
+4. Conflict, risk, ambiguity, or user preference: ask before modifying.
+5. Update `.local/applied.json`.
+6. Write one local log entry for the batch if the system was actually modified.
 
-快速同步模式只处理 `.local/applied.json` 中缺失的 CHG。
+## 8. Audit mode
 
-## 8. 本机日志
+When the user asks to audit:
 
-1. 只有实际修改系统才写 `logs/YYYY-MM.md`。
-2. `logs/` 永远不进入 Git。
-3. 一项完整任务写一条日志；一次状态收敛即使处理多个 CHG 也只写一条。
-4. 新记录放在当月日志顶部。
-5. 当月文件不存在时先创建并写入月份标题。
-6. 任务中断且已产生实际变更时，立即写 `⚠️ 部分完成`。
-7. 绝不记录密码、密钥、Token、Cookie 或其他敏感信息。
+1. Re-run `Check` for every processed CHG.
+2. Do not modify the system.
+3. Report whether each change still holds on this machine.
+4. If state drifted, ask before reapplying.
 
-格式：
+## 9. Safety and Git
 
-```markdown
-## <YYYY-MM-DD HH:MM> · <一句话摘要>
-
-- **类别**: <软件包 / 配置 / 服务 / 自启动>
-- **详情**: <路径、包名、命令、备份位置>
-- **验证**: <命令输出或测试结果>
-- **状态**: ✅ 完成 / ⚠️ 部分完成 / ❌ 已回滚
-```
-
-## 9. 安全与 Git
-
-- 不修改 `/usr/share/omarchy/`。
-- 修改持久配置前必须备份到本机 `backups/`。
-- 不提交真实系统配置文件、备份文件或敏感信息。
-- 不得把另一台电脑的显示器名、分辨率或硬件值直接照抄到当前电脑。
-- 冲突或可能改变用户交互时，先询问用户。
-- 修改仓库文档前先 `git pull --rebase`；完成后 `git commit`。
-- 已配置远程仓库时执行 `git push`。
-- `.local/`、`logs/`、`backups/` 不进入 Git。
+- Never modify `/usr/share/omarchy/`.
+- Back up persistent configuration before modifying it.
+- Do not publish real configuration file copies, backups, secrets, or private data.
+- Do not copy another machine's monitor name, resolution, or hardware value.
+- Ask before overriding an existing user preference or ambiguous behavior.
+- Published manual updates are committed normally.
+- A new CHG is committed only after user confirmation.
+- `.local/`, `logs/`, and `backups/` are never committed.
