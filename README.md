@@ -120,10 +120,9 @@ Upstream: CHG-0001 … CHG-0012
 Local:    CHG-0001 … CHG-0006
 Pending:  CHG-0007 … CHG-0012
 
-Effective after supersedes:
+Effective pending after supersedes:
   CHG-0007
   CHG-0010
-  CHG-0011
   CHG-0012
 ```
 

@@ -32,6 +32,8 @@ def require_str_list(value: Any, name: str, minimum: int = 0) -> None:
     for item in value:
         if not isinstance(item, str) or not item.strip():
             fail(f'{name} entries must be non-empty strings')
+    if len(value) != len(set(value)):
+        fail(f'{name} entries must be unique')
 
 
 def validate_record(path: Path, doc: Any) -> dict[str, Any]:
