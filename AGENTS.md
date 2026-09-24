@@ -2,6 +2,20 @@
 
 所有 Agent 在本仓库中工作时必须遵守本文件。其他 README、manual、changes 文档若与本文件冲突，以本文件为准。
 
+## 术语定义
+- **CHG**：`changes/` 中的一次共享状态变更，一个编号一个文件，包含 Intent / Check / Apply / Adapt / Verify / Rollback。
+- **上游（upstream）**：当前机器可看到的共享 `changes/`、`manual/` 和策略文件。
+- **本机（local）**：当前这台电脑的真实系统状态，以及 `.local/`、`logs/`、`backups/`。
+- **台账（local ledger）**：`.local/applied.json`，记录本机处理过哪些 CHG。
+- **已应用（applied）**：本机真实执行过该 CHG，且验证通过。
+- **已满足（already-satisfied）**：本机处理前已经满足该 CHG，因此这次没有改系统。
+- **跳过（skipped）**：用户明确决定本机不应用该 CHG。
+- **失败（failed）**：本机应用该 CHG 失败，不能当作完成。
+- **待处理（pending）**：上游有、但本机台账里还没有的 CHG。
+- **取代（Supersedes）**：新 CHG 废止旧 CHG 的方案。
+- **继承（Builds on）**：新 CHG 在旧 CHG 方案基础上继续演进。
+- **审计（audit）**：只读检查本机是否仍满足某个 CHG，不修改系统。
+
 ## 0. 固定模型
 
 ```text
