@@ -1,5 +1,6 @@
 # 键盘布局
 
+- **状态**: Active
 - **Verified**: 2026-09-23
 - **关键词**: 键盘，左 Alt，Super，Win，AltWin，swap_lalt_lwin
 
@@ -10,22 +11,35 @@
 - 右侧 Alt 保持不变。
 - 保留 `compose:caps` 和 `shift:both_capslock_cancel`。
 
-## 做法
+## 检查
 
-- 修改 `~/.config/hypr/input.lua`。
-- 在现有 `kb_options` 中合并追加：
+```bash
+hyprctl getoption input:kb_options
+```
 
-  ```text
-  altwin:swap_lalt_lwin
-  ```
+期望输出包含：
 
-- 目标值为：
+```text
+compose:caps,shift:both_capslock_cancel,altwin:swap_lalt_lwin
+```
 
-  ```text
-  compose:caps,shift:both_capslock_cancel,altwin:swap_lalt_lwin
-  ```
+再手动确认：物理左 Alt 能触发一个 Super 快捷键，物理左 Win 表现为 Alt，右侧 Alt 不变。
 
-- 修改后执行 `hyprctl reload`。
+## 应用
+
+修改 `~/.config/hypr/input.lua`，在现有 `kb_options` 中合并追加：
+
+```text
+altwin:swap_lalt_lwin
+```
+
+目标值为：
+
+```text
+compose:caps,shift:both_capslock_cancel,altwin:swap_lalt_lwin
+```
+
+执行 `hyprctl reload`。
 
 ## 适配
 
@@ -37,8 +51,14 @@
 - 只互换左侧用 `altwin:swap_lalt_lwin`。
 - `altwin:swap_alt_win` 会连右侧 Alt 一起互换。
 
+## 回滚
+
+1. 恢复 `backups/` 中修改前的 `~/.config/hypr/input.lua`。
+2. 执行 `hyprctl reload`。
+3. 实测左 Alt、左 Win 和右 Alt 恢复默认行为。
+
 ## 验证
 
 - `hyprctl configerrors` 无错误。
 - `hyprctl getoption input:kb_options` 包含 `altwin:swap_lalt_lwin`。
-- 实测左 Alt 触发 Super 快捷键，左 Win 表现为 Alt，右 Alt 不变。
+- 左 Alt 触发 Super，左 Win 表现为 Alt，右 Alt 不变。
