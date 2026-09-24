@@ -2,7 +2,7 @@
 
 - **Verified**: yes
 - **Keywords**: foot, URL, hyperlink, jump label, show-urls-launch, shortcut
-- **Related changes**: CHG-0008
+- **Related changes**: CHG-0008, CHG-0009
 
 ## Problem
 
@@ -10,20 +10,22 @@ Foot does not provide a single obvious way to reach a link from the keyboard whe
 
 ## Root cause
 
-Foot has a native `show-urls-launch` action. It enters URL mode, where currently visible URLs are tagged with short jump labels; typing a label sequence launches that URL. The default shortcut is `Control+Shift+o`, but unless it is pinned in the config, users may not think to try it.
+Foot has a native `show-urls-launch` action. It enters URL mode, where currently visible URLs are tagged with short jump labels; typing a label sequence launches that URL. The upstream default shortcut is `Control+Shift+o`, but many terminal-native bindings conflict with shell or TUI conventions. `Super+Shift+o` is a better terminal-local choice when no window manager binding claims it.
 
 ## Correct approach
 
-Keep the built-in behavior and pin it explicitly in `[key-bindings]`:
+Use `Super+Shift+o` in `[key-bindings]`:
 
 ```ini
-show-urls-launch=Control+Shift+o
+show-urls-launch=Super+Shift+o
 ```
 
-Then press `Ctrl + Shift + O` in a Foot window, type the jump label shown next to a URL, and it opens in the default browser. This is preferable to inventing a new ad hoc keybinding or mouse-only behavior.
+Then press `Super + Shift + O` in a Foot window, type the jump label shown next to a URL, and it opens in the default browser. Keep the key name lowercase (`o`) because Shift is listed as a modifier; do not write `O`.
 
 ## Pitfalls
 
+- A Foot keybinding only fires while the Foot window is focused. If the window manager or another global app captures `Super+Shift+O` first, Foot never receives it.
+- Before changing the binding, check the window manager for existing global bindings. A terminal-local `Super` shortcut should not be used if the window manager already owns that combination.
 - `show-urls-persistent` is different: it keeps URL mode open after opening a link. This setting only enters and exits once per activation.
 - If a URL is hidden or out of view, URL mode will not find it; the action only tags currently visible URLs.
 - Do not use a single-letter keybinding that clashes with `[url].label-letters`, as it can make some links unreachable.
@@ -31,4 +33,4 @@ Then press `Ctrl + Shift + O` in a Foot window, type the jump label shown next t
 
 ## Environment notes
 
-Verified with Foot 1.28.0 on Wayland/Omarchy. The default shortcut is already supported by Foot. Explicitly writing it in `foot.ini` makes the intent durable across systems that use this repo.
+Verified with Foot 1.28.0 on Wayland/Omarchy. The latest verified binding is `Super+Shift+o`; `Super` is accepted as a valid virtual modifier. Also verify that no Hyprland binding claims `Super+Shift+O` on the target machine before applying.
