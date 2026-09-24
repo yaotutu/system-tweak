@@ -1,55 +1,82 @@
 # system-tweak
 
-本仓库只有三个实体：
+本仓库用“上游变更 + 本机台账”实现多台 Omarchy 电脑的状态收敛。
 
 ```text
-recipes/  = 共享的最终状态、解决方案、经验和回滚方法
-logs/     = 本机修改历史，只留在本机
-backups/  = 本机修改前备份，只留在本机
+changes/ = 共享的有序变更清单，Git 同步
+.local/  = 本机已处理台账，不同步
+logs/    = 本机人类可读修改历史，不同步
+backups/ = 本机修改前备份，不同步
 ```
 
-Git 只同步 `recipes/` 和规则文档；Git 不复制真实系统配置，不安装软件，也不同步本机历史。
-
-## 自动链路
-
-当你在这个目录里让 AI 处理系统、软件、输入法、缩放或兼容性问题时：
+## 核心链路
 
 ```text
-1. git pull --rebase
-2. 搜索 recipes/，优先复用已知经验
-3. 检查当前电脑状态
-4. 已满足的配置跳过；缺失的自动应用；冲突的先询问
-5. 修改前备份到 backups/
-6. 修改并验证
-7. 写入本机 logs/
-8. 验证成功的新经验自动保存为 recipe
-9. git commit / git push
+1. 本机修改真实系统
+2. 验证成功
+3. 写入本机 logs/
+4. 抽象为一个新的 CHG，追加到 changes/
+5. 在本机 .local/applied.json 中标记
+6. Git 提交
+7. 其他电脑拿到新 changes/
+8. 对比自己的 .local/applied.json
+9. 只执行缺失的 CHG
+10. 每处理完一个 CHG，立刻写回本机台账
 ```
-
-这不是后台服务；只有你在本目录里和 AI 开始工作时才会执行。
 
 ## 状态收敛示例
 
 ```text
-所有电脑当前状态：ABCD
-电脑 A 后来新增 EF，并写入 recipes/
-电脑 B 下次工作时：
-  A 已满足 → 跳过
-  B 已满足 → 跳过
-  C 已满足 → 跳过
-  D 已满足 → 跳过
-  E 缺失 → 自动应用 E
-  F 缺失 → 自动应用 F
+上游：CHG-0001…CHG-0004
+本机：CHG-0001…CHG-0004
+        ↓
+上游新增 CHG-0005、CHG-0006
+        ↓
+本机对比台账后发现缺失：
+  CHG-0005
+  CHG-0006
+        ↓
+只处理这两个变更
+        ↓
+处理完成后再写 .local/applied.json
 ```
 
-同步的是最终状态和经验，不是本机操作流水账。
+## 目录结构
 
-## 跨电脑共享经验
-
-每个 recipe 必须写 `关键词`。处理具体应用问题时，AI 先搜索：
-
-```bash
-grep -RniE "微信|wechat|缩放|scale|输入法|fcitx|rime" recipes
+```text
+system-tweak/
+├── AGENTS.md
+├── README.md
+├── .gitignore
+├── changes/
+│   ├── INDEX.md
+│   ├── 0001-input-method.md
+│   ├── 0002-keyboard.md
+│   ├── 0003-workspace-navigation.md
+│   ├── 0004-omascape.md
+│   ├── 0005-wechat.md
+│   └── 0006-workspace-no-wrap.md
+├── .local/
+│   └── applied.json
+├── logs/
+│   └── 2026-09.md
+└── backups/
+    └── 20260924-2036-workspace-no-wrap/
 ```
 
-例如微信缩放和输入法候选窗被修好后，会自动形成 `recipes/wechat.md`。其他电脑无需重新踩坑，先读这个 recipe，再按本机分辨率、微信版本和输入法版本适配。
+## Git 同步范围
+
+会同步：
+
+- `AGENTS.md`
+- `README.md`
+- `.gitignore`
+- `changes/`
+
+不会同步：
+
+- `.local/`
+- `logs/`
+- `backups/`
+- 真实系统配置文件
+- 密码、Token、密钥、Cookie 等敏感信息
