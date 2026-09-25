@@ -101,8 +101,38 @@ The result can look deceptively healthy: the service is active, the Rime addon i
 - A custom Shift processor must reset any repeat-suppression state. Keeping a permanent `last_shift` value can make later presses of the same Shift key disappear.
 - Do not mark CHG-0001 verified until both command checks and an actual Chinese composition test pass.
 
+## Hyprland 0.56.2 lost Shift releases
+
+Hyprland 0.56.2 at commit `efb50993780079460b0cbed1363e2166a2de1d9f` has a reported regression in its native Wayland input-method path: Shift press events reach Fcitx5/Rime, but the matching release events may be dropped. Rime's standard `ascii_composer` toggles `ascii_mode` on a short modifier press followed by release, so it cannot complete the toggle without that release.
+
+The upstream report includes Fcitx5 debug evidence: repeated `Shift_L` press records with no release records, while normal letter keys deliver both. It also reports a stuck Shift modifier on subsequent events. See:
+
+- https://github.com/hyprwm/Hyprland/issues/15886
+- https://github.com/omacom/omarchy/issues/7346
+
+This is strong evidence for a Hyprland regression, but not an upstream-confirmed root cause: the Hyprland issue was closed as not planned without maintainer discussion, and no bisect or accepted fix is attached. PR #15568 is the suspected regression point, not a confirmed cause. PR #15904 fixes release-bind subchord matching but does not claim to fix IME release delivery.
+
+### Ownership boundary
+
+Fcitx5 must not own the Shift language-switch behavior. Its `[Hotkey/AltTriggerKeys]` section should contain an empty entry so it does not consume Shift before Rime. Rime owns both the mode option and the composing-text behavior.
+
+For the affected Hyprland version, use a Rime Lua processor that handles Shift on press:
+
+1. Set Rime's built-in `Shift_L` and `Shift_R` switch actions to `noop` so a future release event cannot double-toggle.
+2. Register `lua_processor@*shift_toggle` before the existing processors.
+3. On a lone Shift press, commit raw composing input and toggle `ascii_mode`.
+4. If another key follows within 300 ms, treat it as a Shift chord and undo the speculative toggle.
+5. Return `kNoop` so Rime continues handling the event path; do not make Fcitx5 a second state owner.
+
+The 300 ms workaround is based on the public Omarchy/Hyprland report and must be validated with:
+
+- left and right Shift;
+- Chinese → English and English → Chinese;
+- composing `nihao`, then Shift, which must commit `nihao` rather than a Chinese candidate;
+- Shift+letter chords, which must not leave the language mode toggled.
+
 ## Environment notes
 
-The observed lost-release behavior was on Hyprland 0.56.2. Other Hyprland versions should first reproduce the actual event behavior before adopting the same workaround.
+The lost-release behavior is reported on Hyprland 0.56.2 at commit `efb50993780079460b0cbed1363e2166a2de1d9f`. Re-test the event stream before retaining the press-based workaround after a Hyprland upgrade.
 
-The Rime Ice deployment failure was confirmed with Fcitx5 5.1.22, fcitx5-rime 5.1.15, librime 1.17.0, and `rime-ice-data` 2026.04.13. The recovery was verified by the presence of the three compiled dictionaries, clean recent service logs, and successful user input.
+The local affected stack is Hyprland 0.56.2, Fcitx5 5.1.22, fcitx5-rime 5.1.15, librime 1.17.0, and `rime-ice-data` 2026.04.13. The Rime Ice deployment recovery was verified by the presence of all three compiled dictionaries, clean recent service logs, and successful user input.
