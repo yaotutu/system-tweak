@@ -115,6 +115,10 @@ CHG-0008
 
 a new machine processes only `CHG-0010`. It does not apply `CHG-0008`, then `CHG-0009`, then `CHG-0010`.
 
+### Marking a published CHG as problematic
+
+Published CHG JSON is immutable, so a faulty or incomplete record is never edited to add `deprecated` or `replacedBy`. Publish a higher-numbered, self-contained CHG whose `supersedes` names the old record. That relation is the machine-readable obsolete marker used by sync and audit. In the related manual, label the old CHG as superseded/problematic and point readers to the current replacement. The index remains an id/file manifest and does not duplicate status metadata.
+
 ## Local problem-solving flow
 
 ```text

@@ -2,7 +2,14 @@
 
 - **Verified**: yes
 - **Keywords**: Fcitx5, Rime, Rime Ice, Shift, AltTriggerKeys, ascii_mode, shift_toggle, schema patch, deploy, melt_eng, radical_pinyin, 候选词, raw input
-- **Related changes**: CHG-0001
+- **Related changes**: CHG-0001 (superseded), CHG-0013 (current)
+
+## Status
+
+- **Current**: CHG-0013
+- **Superseded/problematic**: CHG-0001
+
+CHG-0001 captured the desired behavior but was not sufficiently self-contained for safe replay. It omitted exact profile merge and deployment mechanics, which allowed several implementation failures: incomplete Rime Ice dependencies, replacement of the whole schema metadata block, removal of the required `keyboard-us` inactive entry, and profile updates being overwritten by a running Fcitx5 process. New machines must apply CHG-0013 directly; they must not apply CHG-0001 first.
 
 ## Problem
 
@@ -28,7 +35,7 @@ There are multiple input layers. They can each intercept or process Shift:
 - Let one custom Lua processor own the behavior on Shift press.
 - While composing, commit `ctx.input`, which is the raw input such as `nihao`.
 - Clear the composition and switch `ascii_mode`.
-- Repeat suppression is useful when the compositor or input path duplicates a modifier press.
+- Return `kAccepted` after handling Shift so no later processor handles the same press again.
 
 ## Pitfalls
 
@@ -99,7 +106,7 @@ The result can look deceptively healthy: the service is active, the Rime addon i
 - `fcitx5-remote` state is input-context dependent. `-n` reports the selected method; it does not by itself prove that the focused text field is in active Chinese mode.
 - Automated tests that open a new window can create a fresh inactive input context and produce plain ASCII. Treat this as diagnostic noise unless the real application reproduces it.
 - Do not add persistent repeat-suppression state to the Shift processor. It can make later presses of the same Shift key disappear.
-- Do not mark CHG-0001 verified until both command checks and an actual Chinese composition test pass.
+- Do not mark CHG-0013 verified until both command checks and an actual Chinese composition test pass.
 
 ## Hyprland 0.56.2 lost Shift releases
 
