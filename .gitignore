@@ -1,16 +1,9 @@
-# 本机日志不参与同步
+# Current-machine history and backups never sync
 logs/
-
-# 本机回滚备份不参与同步
 backups/
 
-# 系统备份文件不参与同步
+# Common backup and generated files
 *.bak
 *.bak.*
-
-# 本机处理台账不参与同步
-.local/
-
-# Python validation caches
 __pycache__/
 *.pyc

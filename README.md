@@ -1,219 +1,91 @@
 # system-tweak
 
-This project synchronizes Omarchy systems with clearly separated artifacts:
+这是一个面向 Linux / Omarchy 的系统配置知识库。
+
+它不自动同步电脑状态，不自动执行配置，也不维护“哪些变更已经应用”的台账。需要某项功能时，用户把对应文档交给任意 Agent，由 Agent 根据当前电脑实际情况实施。
+
+## 内容分类
 
 ```text
-logs/        = mandatory local history, never published
-manual/      = shared explanations and experience, published by default
-changes/     = shared state changes as CHG JSON v1
-schema/      = shared JSON Schema definitions
-scripts/     = shared CHG validation script
-.local/      = local processed-change ledger, never published
-backups/     = local pre-change backups, never published
+logs/            本机真实变更历史，不同步
+backups/         本机修改前备份，不同步
+configurations/  按软件或功能分类的可重放实施说明，同步
+knowledge/       根因、经验、坑和排错知识，同步
 ```
 
-Git publishes documents, schemas, policy, and validation scripts only. It never copies a real system configuration file, a package, or private data.
+## 使用方式
 
-## Project commands
+### 查找可实现的功能
 
-This project ships repository-local Codex skills under `.agents/skills/`. Codex discovers them and they can be invoked explicitly with `$skill-name`:
+浏览 [configurations/INDEX.md](configurations/INDEX.md)，例如：
 
 ```text
-$new-machine
-$sync-changes
-$audit
+请读取 configurations/fcitx5/rime-chinese-input.md，
+检查当前电脑环境后帮我实现。修改前备份，完成后验证并写本机日志。
 ```
 
-- `$new-machine`: initialize a computer that has not used this repository before.
-- `$sync-changes`: process only the upstream changes missing from this machine.
-- `$audit`: read-only check of all processed effective changes.
+配置文档不是自动脚本。Agent 仍需：
 
-Arbitrary project-local `/xxx` slash commands are not supported by Codex 0.155.1. Use `$skill-name` instead.
+1. 检查当前包版本、服务、配置和已有偏好；
+2. 发现冲突或歧义时询问用户；
+3. 修改前备份；
+4. 最小化修改范围；
+5. 执行命令验证和真实人工测试；
+6. 将本机实际修改写入 `logs/YYYY-MM.md`。
 
-## Git synchronization discipline
+### 查询问题和经验
 
-All repository workflows keep the remote and local branch coherent:
+浏览 [knowledge/INDEX.md](knowledge/INDEX.md)。这些文档解释根因、正确思路和环境差异，不直接触发修改。
 
-1. At the start of every task, run `git fetch origin` when a remote is configured.
-2. For longer work, fetch again before key phases such as change processing, auditing, CHG publication, or commit preparation.
-3. If the remote has new commits:
-   - with a clean working tree and non-diverged local branch, pull using `git pull --ff-only`;
-   - with a dirty or diverged branch, stop and ask instead of discarding, stashing, or overwriting anything.
-4. After committing any Git-published file, immediately push the current branch.
-5. Never force push. If push is rejected, fetch and ask how to resolve the divergence.
-6. Local-only state under `.local/`, `logs/`, and `backups/` is neither committed nor pushed.
+## 配置文档标准
 
-## CHG data contract
+每份 `configurations/` 文档应包含：
 
-Published CHG v1 records are immutable history. All new executable changes use CHG v2 (`schema/chg-v2.schema.json`) and run only through `scripts/chgctl.py`:
+- 目标和适用环境；
+- 交给 Agent 的任务；
+- 修改前检查；
+- 备份范围；
+- 实施步骤和关键片段；
+- 需要询问的冲突；
+- 自动和人工验证；
+- 回滚方式；
+- 相关经验链接。
+
+文档不能包含真实配置文件的整份副本、密码、Token、密钥、私人数据，或假设其他电脑拥有相同硬件值。
+
+## 本机历史
+
+`logs/` 记录这台电脑实际发生的修改，按时间排列，不进入 Git：
+
+```markdown
+## 2026-09-25 10:00 · 一句话摘要
+
+- **Category**: configuration
+- **Details**: 修改内容和备份位置
+- **Verification**: 验证结果
+- **Status**: ✅ complete
+```
+
+`backups/` 同样只属于当前电脑。
+
+## Git 边界
+
+同步：
 
 ```text
-changes/CHG-XXXX.json
+AGENTS.md
+README.md
+configurations/
+knowledge/
 ```
 
-`changes/index.json` is the canonical manifest. It contains only each record's `id` and `file`; the CHG file itself is the sole source of full metadata.
-
-Validate and plan changes with:
-
-```bash
-python3 scripts/validate-changes.py
-python3 scripts/chgctl.py validate
-python3 scripts/chgctl.py plan
-```
-
-The validator checks:
-
-- CHG JSON structure and required fields;
-- unique, correctly formatted IDs;
-- filename/ID consistency;
-- manual references;
-- supersession and lineage references;
-- supersession cycles;
-- explicit backup requirements;
-- `check.readOnly=true`;
-- `apply.selfContained=true`;
-- index/record consistency;
-- absence of legacy Markdown CHG files;
-- v2 asset checksums, ownership, operation IDs, lifecycle order, and rollback coverage.
-
-### CHG v2 execution states
+永不提交：
 
 ```text
-pending → planned → backed-up → applying → verifying → awaiting-manual → applied
+logs/
+backups/
+真实系统配置
+密钥、账号和私人数据
 ```
 
-`chgctl` owns backups, run journals, evidence, and ledger transitions. Manual tests remain blocked until the user explicitly confirms each emitted test ID. An Agent may not reorder operations, write undeclared paths, edit the ledger, or execute v1.
-
-Publication status is separate from execution status:
-
-```text
-draft → validated → committed-not-pushed → published
-```
-
-Only a commit present on the configured upstream is `published`.
-
-### Core field meanings
-
-| Field | Meaning |
-|---|---|
-| `supersedes` | Older changes replaced by this change. This field determines skip and audit behavior. |
-| `buildsOn` | Design lineage only. It is never an execution dependency. |
-| `check.readOnly` | Must be true; check commands may never modify the system. |
-| `apply.selfContained` | Must be true; apply cannot assume an older CHG was previously executed. |
-| `requiresBackup` / `backupPaths` | Whether applying requires a local backup, and which persistent paths to back up. |
-| `intent` | The desired behavior and observable success outcomes. |
-| `check` | Read-only state inspection and expected current state. |
-| `apply` | Self-contained ordered mutation steps and commands. |
-| `adapt` | Environment-specific adaptation rules. |
-| `verify` | Required post-apply commands and observed behavior. |
-| `rollback` | Local-resource-only rollback steps. |
-
-## Sync flow
-
-On a machine:
-
-```text
-1. Read changes/index.json and every referenced CHG JSON
-2. Read .local/applied.json
-3. Compute pending changes
-4. Compute the transitive supersedes closure
-5. Skip pending changes replaced by a higher-numbered CHG
-6. Treat buildsOn as design lineage only
-7. Apply pending effective changes in numeric order
-8. Update the local ledger after every change
-9. Record local history when a real modification occurs
-```
-
-Supersession avoids useless intermediate states. Given:
-
-```text
-CHG-0008
-  ↳ CHG-0009 supersedes CHG-0008
-  ↳ CHG-0010 supersedes CHG-0009
-```
-
-a new machine processes only `CHG-0010`. It does not apply `CHG-0008`, then `CHG-0009`, then `CHG-0010`.
-
-### Marking a published CHG as problematic
-
-Published CHG JSON is immutable, so a faulty or incomplete record is never edited to add `deprecated` or `replacedBy`. Publish a higher-numbered, self-contained CHG whose `supersedes` names the old record. That relation is the machine-readable obsolete marker used by sync and audit. In the related manual, label the old CHG as superseded/problematic and point readers to the current replacement. The index remains an id/file manifest and does not duplicate status metadata.
-
-## Local problem-solving flow
-
-```text
-1. Inspect and modify this machine
-2. Verify the behavior
-3. Write mandatory local history
-4. Update shared manual knowledge when it is reusable
-5. Ask whether the state change should be published
-6. Publish a CHG only according to sync-policy.json
-```
-
-## Example
-
-```text
-Upstream: CHG-0001 … CHG-0012
-Local:    CHG-0001 … CHG-0006
-Pending:  CHG-0007 … CHG-0012
-
-Effective pending after supersedes:
-  CHG-0007
-  CHG-0010
-  CHG-0012
-```
-
-The other machine processes only the effective pending changes, not obsolete intermediate records.
-
-## Directory
-
-```text
-system-tweak/
-├── AGENTS.md
-├── README.md
-├── .gitignore
-├── schema/
-│   ├── chg.schema.json
-│   └── change-index.schema.json
-├── scripts/
-│   └── validate-changes.py
-├── manual/
-│   ├── INDEX.md
-│   └── topic files
-├── changes/
-│   ├── index.json
-│   └── CHG-0001.json … CHG-0012.json
-├── .local/
-│   └── applied.json
-├── logs/
-│   └── YYYY-MM.md
-└── backups/
-    └── YYYYMMDD-HHMM-<slug>/
-```
-
-## Publication rules
-
-| Artifact | Written when | Published | User confirmation |
-|---|---|---:|---:|
-| Local log | Always, after a real modification | No | No |
-| Manual entry | Durable explanation or pitfall discovered | Yes | No, unless sensitive/uncertain |
-| New CHG outside whitelist | A verified state is worth sharing | Yes | Yes, always |
-| New CHG in `always` whitelist | Verified, safe change in an always domain | Yes | No, unless high-risk/uncertain |
-| Local ledger | After each CHG is processed | No | No |
-| Backup | Before modifying persistent config | No | No |
-| Schema or validation script | When the data contract changes | Yes | Review before commit |
-
-## Publication policy
-
-`sync-policy.json` decides when new CHGs may be published without an additional question. The current policy sets `rime` and `foot` to `always`; every other domain defaults to `ask`.
-
-A whitelist never authorizes unsafe, unverified, sensitive, private, or destructive changes. It only removes the routine confirmation for that domain.
-
-## Excluded from publication
-
-- `.local/`
-- `logs/`
-- `backups/`
-- real system configuration files
-- passwords, tokens, keys, cookies
-- private application or account data
-- `changes/*.md`
+修改共享文档后应 commit 并 push。Push 失败时只能说“本地已提交、尚未同步”。
