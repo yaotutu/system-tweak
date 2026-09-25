@@ -116,6 +116,18 @@ This is strong evidence for a Hyprland regression, but not an upstream-confirmed
 
 Fcitx5 must not own the Shift language-switch behavior. Its `[Hotkey/AltTriggerKeys]` section should contain an empty entry so it does not consume Shift before Rime. Rime owns both the mode option and the composing-text behavior.
 
+This does not disable Fcitx5's framework-level activation shortcut. Keep the regular trigger explicit:
+
+```ini
+[Hotkey/TriggerKeys]
+0=Control+space
+
+[Hotkey/AltTriggerKeys]
+0=
+```
+
+`Control+Space` activates or deactivates Fcitx5; Shift changes Rime's `ascii_mode` only while Rime is active. Clearing `AltTriggerKeys` and clearing `TriggerKeys` are different operations.
+
 For the affected Hyprland version, use a minimal Rime Lua processor that handles Shift on press:
 
 1. Set Rime's built-in `Shift_L` and `Shift_R` switch actions to `noop` so a future release event cannot double-toggle.
