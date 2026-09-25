@@ -1,12 +1,23 @@
 # WeChat HiDPI 与 Fcitx5 候选窗
 
-- **状态**：在 2× 缩放、Hyprland 0.56.2、wechat-universal-bwrap 环境验证
-- **目标**：WeChat UI 和 Fcitx5 候选窗都匹配当前显示器缩放
+- **性质**：参考方案，包安装、UI scale 和候选窗 DPI 可独立选择
+- **已验证环境**：2× 缩放、Hyprland 0.56.2、wechat-universal-bwrap
+- **参考能力**：WeChat UI 与 Fcitx5 候选窗匹配当前显示器缩放
 - **相关经验**：[WeChat HiDPI 输入问题](../../knowledge/wechat/hidpi-input.md)
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-先确认用户确实需要安装/配置 WeChat，并检查当前启动方式、窗口 class、显示器 scale 和已有 Hyprland 模块。这个方案包含软件安装和应用专属缩放，存在偏好冲突时先询问。
+只读检查当前是否安装 WeChat、启动方式、窗口 class、显示器 scale、UI 大小、候选窗大小和已有 Hyprland 模块。向用户说明：
+
+1. 仅安装 WeChat；
+2. 仅修复 WeChat UI scale；
+3. 仅修复 XWayland 候选窗 DPI；
+4. 采用完整参考组合；
+5. 保持当前状态，只做诊断。
+
+说明每个选项会修改、保留和不处理什么。用户确认后才备份和实施。不得把 2× 缩放或其他机器的 class 硬编码到目标机器。
+
+## 用户确认后的参考原理
 
 ## 原理
 

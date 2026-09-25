@@ -3,11 +3,13 @@
 - **目标**：在 Omarchy bar 显示 CPU、内存和下载速度，并提供详细系统监视面板
 - **来源**：https://github.com/yaotutu/omarchy-stats
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-先检查目标机器是否支持 Omarchy Shell 插件、插件是否已经存在，以及 bar 中希望放置的位置。修改 `shell.json` 前备份；优先使用 Omarchy 插件命令，不要手工复制另一台电脑的 shell 配置。
+先只读检查目标机器是否支持 Omarchy Shell 插件、插件是否已经存在、当前是否启用、bar 布局和用户真正需要的指标。向用户说明“安装但不启用”“安装并启用”“调整位置/设置”“更新”“停用或卸载”等选项，以及每个选项会修改什么。用户确认后才备份并操作；不要手工复制另一台电脑的 shell 配置。
 
-## 安装
+## 用户确认后的参考操作
+
+### 安装
 
 ```bash
 omarchy plugin add https://github.com/yaotutu/omarchy-stats.git --enable

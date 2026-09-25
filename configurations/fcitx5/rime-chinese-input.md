@@ -1,14 +1,25 @@
 # Fcitx5 / Rime 中文输入
 
-- **状态**：已在 Omarchy、Hyprland 0.56.2、Fcitx5 5.1.22、fcitx5-rime 5.1.15、librime 1.17.0 验证
-- **目标**：Ctrl+Space 开关输入法；左、右 Shift 在 Rime 内切换中英文；拼音组合中按 Shift 时提交原始编码
+- **性质**：参考方案，不是必须完整还原的目标状态
+- **已验证环境**：Omarchy、Hyprland 0.56.2、Fcitx5 5.1.22、fcitx5-rime 5.1.15、librime 1.17.0
+- **参考能力**：Rime Ice、Ctrl+Space 框架开关、Shift 中英文切换、原始编码提交
 - **相关经验**：[Rime 排错](../../knowledge/fcitx5/rime-troubleshooting.md)
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-请在当前电脑实现本文目标。先检查环境和已有偏好；发现冲突时询问用户。修改持久配置前备份，完成后验证真实输入行为并写本机日志。不得照抄另一台电脑的整份配置。
+先只读检查当前电脑和用户目标，不要立即修改。向用户说明当前输入法、Rime 数据、快捷键和 Shift 行为，并把可选范围拆开：
 
-## 期望结果
+1. 只安装或修复 Rime Ice；
+2. 只恢复 Fcitx5 的 `keyboard-us + rime` 与 Ctrl+Space；
+3. 只处理 Hyprland 环境下的 Shift 切换；
+4. 实施完整参考组合；
+5. 保留当前方案，只做诊断或局部修复。
+
+对每个合理选项说明会修改、保留和不处理什么，并给出建议。用户确认范围后，才备份和实施。不得照抄另一台电脑的整份配置。
+
+## 参考结果
+
+以下结果可以独立选择，不要求全部实现：
 
 1. Fcitx5 profile 同时包含：
    - `keyboard-us`：输入法关闭状态；
@@ -41,7 +52,11 @@ fcitx5-remote -n
 
 若已有其他输入法、Rime patch、用户词库或自定义 Lua，必须保留并合并。不要删除 `keyboard-us`。
 
-## 安装
+## 用户确认后的参考实施
+
+只执行用户确认的组成部分。若用户只选择快捷键、Rime 数据或 Shift 行为之一，不得顺带实施其他部分。
+
+### 安装或修复 Rime Ice
 
 安装 Fcitx5 Rime 与 librime。Rime Ice 可用系统已有的完整数据，也可以用官方 Plum 安装到用户目录。不要为了安装某个 AUR 数据包而自动删除系统 `librime-data`。
 
@@ -55,7 +70,7 @@ rime_dir="$HOME/.local/share/fcitx5/rime" \
 rm -rf "$tmp"
 ```
 
-## Fcitx5 profile
+### Fcitx5 profile 与 Ctrl+Space
 
 **必须先停止 Fcitx5，再修改 profile。** 运行中的 Fcitx5 在退出时可能用内存中的旧配置覆盖刚写入的文件。
 
@@ -83,7 +98,7 @@ Name=rime
 
 若已有其他输入法，应保留其条目并重新连续编号。
 
-## Fcitx5 快捷键
+### Fcitx5 快捷键
 
 在 `~/.config/fcitx5/config` 合并以下 section，保留其他设置：
 
@@ -100,7 +115,7 @@ Name=rime
 - Ctrl+Space 由 Fcitx5 负责，开关整个输入法；
 - Shift 不由 Fcitx5 接管，只交给 Rime。
 
-## Rime Shift 处理器
+### Rime Shift 处理器
 
 创建 `~/.local/share/fcitx5/rime/lua/shift_toggle.lua`：
 
@@ -156,7 +171,7 @@ patch:
 
 这会覆盖完整 Schema 元数据并破坏依赖。
 
-## 部署与启动
+### 部署与启动
 
 ```bash
 rm -rf ~/.local/share/fcitx5/rime/build

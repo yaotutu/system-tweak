@@ -1,12 +1,22 @@
 # Foot 终端行为
 
-- **状态**：在 Foot 1.28.0、Wayland/Omarchy 验证
-- **目标**：选中文本自动复制到常规剪贴板与 primary selection；Ctrl+Shift+O 打开可见 URL
+- **性质**：参考方案，可分别选择
+- **已验证环境**：Foot 1.28.0、Wayland/Omarchy
+- **参考能力**：选中文本复制到常规剪贴板与 primary selection；Ctrl+Shift+O 打开可见 URL
 - **相关经验**：[选中复制](../../knowledge/foot/selection-copy.md)、[URL 快捷键冲突](../../knowledge/foot/url-shortcut-conflicts.md)
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-读取当前 `~/.config/foot/foot.ini`，备份后只合并以下设置，不覆盖主题 include、字体、滚动、已有文本绑定或其他用户偏好。
+只读读取当前 `~/.config/foot/foot.ini` 和全局快捷键，向用户分别说明：
+
+1. 只启用选中自动复制；
+2. 只启用 URL jump labels；
+3. 两者都启用；
+4. 保持当前状态。
+
+说明每个选项会新增哪些行、保留哪些现有设置及可能的快捷键冲突。用户确认后才备份和合并；不得覆盖主题 include、字体、滚动、已有文本绑定或其他用户偏好。
+
+## 用户确认后的参考配置
 
 ## 配置
 

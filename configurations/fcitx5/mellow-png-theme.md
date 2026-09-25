@@ -1,12 +1,22 @@
 # Fcitx5 Mellow Youlan PNG 主题
 
-- **状态**：方案在 Fcitx5 5.1.22、Wayland、2×缩放环境验证
-- **目标**：保留 Mellow Youlan 视觉，并用预渲染 PNG 避免候选窗 SVG 重绘卡顿
+- **性质**：参考方案，不代表必须更换当前主题
+- **已验证环境**：Fcitx5 5.1.22、Wayland、2×缩放
+- **参考能力**：Mellow Youlan 视觉、预渲染 PNG 性能方案
 - **相关经验**：[SVG 主题性能问题](../../knowledge/fcitx5/svg-theme-performance.md)
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-请先检查 Fcitx5 版本、当前主题、显示缩放和现有主题目录。备份 `classicui.conf` 与相关主题目录，再实施。不得覆盖用户未知的主题自定义。
+只读检查 Fcitx5 版本、当前主题、显示缩放、候选窗性能和现有主题目录。向用户说明：
+
+1. 保持当前主题，只诊断性能；
+2. 只安装 Mellow 原始主题；
+3. 安装并选择 PNG 变体；
+4. 如果新版 Fcitx5 已修复问题，不采用 workaround。
+
+说明每个选项会修改和保留什么，并给出建议。用户确认后才备份 `classicui.conf` 与相关主题目录并实施。不得覆盖未知主题自定义。
+
+## 用户确认后的参考实施
 
 ## 检查
 

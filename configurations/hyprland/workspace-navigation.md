@@ -4,9 +4,9 @@
 - **目标**：Ctrl+Left / Ctrl+Right 只在当前显示器已存在的正 ID workspace 间移动，并在边界停止
 - **相关经验**：[Workspace 导航原理](../../knowledge/hyprland/workspace-navigation.md)
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-备份并读取 `~/.config/hypr/bindings.lua`。保留 Omarchy 的 Super+Tab / Super+Shift+Tab 默认行为，解除 Ctrl+Left、Ctrl+Right 的旧绑定，并增加一个 Lua 回调：
+先只读检查 `~/.config/hypr/bindings.lua`、当前 workspace/monitor 和 Ctrl+Left/Right 绑定。向用户说明“保持当前导航”“只改 Ctrl+Left/Right 为不循环”“设计跨显示器导航”等可选范围，以及每个选项保留的 Omarchy 默认快捷键。用户确认不循环方案后，才备份并修改：
 
 1. 读取活动 workspace；
 2. 枚举相同 monitor 上 ID 大于 0、非 special 的已存在 workspace；

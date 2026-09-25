@@ -4,9 +4,11 @@
 - **目标**：Ctrl+Up 打开支持实时缩略图、搜索和跨 workspace 拖拽的总览
 - **相关经验**：[Omascape 总览](../../knowledge/omarchy/omascape-overview.md)
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-先检查插件是否已安装、当前 Ctrl+Up 绑定和 `~/.config/hypr/bindings.lua`。如果 Ctrl+Up 已用于其他重要功能，先询问用户。
+先只读检查插件是否已安装、当前 Ctrl+Up 绑定、Omarchy Shell 版本和用户是否需要搜索/拖拽等完整总览能力。向用户说明“只安装插件”“安装并绑定 Ctrl+Up”“保留当前总览工具”等选项和冲突。用户确认后才实施。
+
+## 用户确认后的参考安装
 
 安装并启用：
 

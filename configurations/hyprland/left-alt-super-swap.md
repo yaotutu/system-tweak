@@ -4,9 +4,9 @@
 - **目标**：只互换物理左 Alt 与左 Super，右 Alt 保持不变
 - **相关经验**：[键盘布局](../../knowledge/hyprland/keyboard-layout.md)
 
-## 交给 Agent 的任务
+## Agent 先做什么
 
-先检查键盘固件和当前 `input:kb_options`。备份 `~/.config/hypr/input.lua`，然后在现有 XKB options 中合并：
+先只读检查键盘固件、实际按键事件和当前 `input:kb_options`。向用户说明当前映射、只交换左侧按键会产生的行为、保留的右 Alt 和其他 XKB options，并给出“保持当前”与“应用左侧互换”选项。用户确认后才备份 `~/.config/hypr/input.lua` 并合并：
 
 ```text
 altwin:swap_lalt_lwin
