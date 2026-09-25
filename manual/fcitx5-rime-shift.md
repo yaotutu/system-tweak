@@ -98,7 +98,7 @@ The result can look deceptively healthy: the service is active, the Rime addon i
 - Copying only `rime_ice.schema.yaml` and `rime_ice.dict.yaml` is insufficient. Rime Ice also uses shared data and dependent schemas.
 - `fcitx5-remote` state is input-context dependent. `-n` reports the selected method; it does not by itself prove that the focused text field is in active Chinese mode.
 - Automated tests that open a new window can create a fresh inactive input context and produce plain ASCII. Treat this as diagnostic noise unless the real application reproduces it.
-- A custom Shift processor must reset any repeat-suppression state. Keeping a permanent `last_shift` value can make later presses of the same Shift key disappear.
+- Do not add persistent repeat-suppression state to the Shift processor. It can make later presses of the same Shift key disappear.
 - Do not mark CHG-0001 verified until both command checks and an actual Chinese composition test pass.
 
 ## Hyprland 0.56.2 lost Shift releases
@@ -116,20 +116,20 @@ This is strong evidence for a Hyprland regression, but not an upstream-confirmed
 
 Fcitx5 must not own the Shift language-switch behavior. Its `[Hotkey/AltTriggerKeys]` section should contain an empty entry so it does not consume Shift before Rime. Rime owns both the mode option and the composing-text behavior.
 
-For the affected Hyprland version, use a Rime Lua processor that handles Shift on press:
+For the affected Hyprland version, use a minimal Rime Lua processor that handles Shift on press:
 
 1. Set Rime's built-in `Shift_L` and `Shift_R` switch actions to `noop` so a future release event cannot double-toggle.
 2. Register `lua_processor@*shift_toggle` before the existing processors.
-3. On a lone Shift press, commit raw composing input and toggle `ascii_mode`.
-4. If another key follows within 300 ms, treat it as a Shift chord and undo the speculative toggle.
-5. Return `kNoop` so Rime continues handling the event path; do not make Fcitx5 a second state owner.
+3. Ignore release events and non-Shift keys.
+4. On either Shift press, commit raw composing input, clear the composition, and toggle `ascii_mode`.
+5. Return `kAccepted` after handling Shift so later processors cannot process the same event again.
+6. Keep Fcitx5's `AltTriggerKeys` empty; do not make Fcitx5 a second state owner.
 
-The 300 ms workaround is based on the public Omarchy/Hyprland report and must be validated with:
+This intentionally treats every Shift press as a language toggle. It is the direct workaround for a compositor path that delivers press but not release; it does not attempt to infer Shift chords with timers. Validate:
 
 - left and right Shift;
 - Chinese → English and English → Chinese;
-- composing `nihao`, then Shift, which must commit `nihao` rather than a Chinese candidate;
-- Shift+letter chords, which must not leave the language mode toggled.
+- composing `nihao`, then Shift, which must commit `nihao` rather than a Chinese candidate.
 
 ## Environment notes
 
