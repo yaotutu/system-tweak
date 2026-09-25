@@ -128,6 +128,20 @@ This does not disable Fcitx5's framework-level activation shortcut. Keep the reg
 
 `Control+Space` activates or deactivates Fcitx5; Shift changes Rime's `ascii_mode` only while Rime is active. Clearing `AltTriggerKeys` and clearing `TriggerKeys` are different operations.
 
+The Fcitx5 profile must contain both states:
+
+```ini
+[Groups/0/Items/0]
+Name=keyboard-us
+
+[Groups/0/Items/1]
+Name=rime
+```
+
+`keyboard-us` is the inactive state and `rime` is the active state. A profile containing only `rime` can leave `fcitx5-remote -t`, `-c`, `-o`, and `Control+Space` with no effective state transition. This is not a competing Pinyin engine; it is Fcitx5's required inactive keyboard entry.
+
+When editing `profile` externally, stop Fcitx5 first. A running process may save its in-memory profile during shutdown and overwrite a file written immediately before `systemctl --user restart`.
+
 For the affected Hyprland version, use a minimal Rime Lua processor that handles Shift on press:
 
 1. Set Rime's built-in `Shift_L` and `Shift_R` switch actions to `noop` so a future release event cannot double-toggle.
