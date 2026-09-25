@@ -1,19 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://system-tweak.local/schema/change-index.schema.json",
-  "title": "system-tweak change index v1",
+  "title": "system-tweak change index v2",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "changes"],
   "properties": {
-    "schema": { "const": 1, "description": "Index structure version." },
+    "schema": { "const": 2, "description": "Index structure version." },
     "changes": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "file"],
+        "required": ["id", "file", "schema"],
         "properties": {
           "id": {
             "type": "string",
@@ -24,6 +24,10 @@
             "type": "string",
             "pattern": "^CHG-[0-9]{4}\\.json$",
             "description": "Filename of the corresponding record under changes/."
+          },
+          "schema": {
+            "enum": [1, 2],
+            "description": "Schema version used by the referenced record."
           }
         }
       }

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://system-tweak.local/schema/local-ledger.schema.json",
+  "title": "system-tweak local ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "host", "lastProcessed", "changes"],
+  "properties": {
+    "schema": { "const": 1 },
+    "host": { "type": "string", "minLength": 1 },
+    "lastProcessed": {
+      "oneOf": [
+        { "type": "string", "pattern": "^CHG-[0-9]{4}$" },
+        { "type": "null" }
+      ]
+    },
+    "changes": {
+      "type": "object",
+      "patternProperties": {
+        "^CHG-[0-9]{4}$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "verifiedAt"],
+          "properties": {
+            "status": { "enum": ["applied", "already-satisfied", "skipped", "failed"] },
+            "verifiedAt": { "type": "string", "format": "date-time" },
+            "backup": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 },
+            "runId": { "type": "string", "minLength": 1 }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "status": { "enum": ["skipped", "failed"] } } },
+              "then": { "required": ["reason"] }
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://system-tweak.local/schema/local-run.schema.json",
+  "title": "system-tweak CHG run journal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "runId", "changeId", "changeDigest", "planDigest", "state",
+    "startedAt", "updatedAt", "backupManifest", "operations", "automatic",
+    "manual", "decisions", "errors"
+  ],
+  "properties": {
+    "schema": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "changeId": { "type": "string", "pattern": "^CHG-[0-9]{4}$" },
+    "changeDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "planDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "state": {
+      "enum": [
+        "planned", "backed-up", "applying", "verifying", "awaiting-manual",
+        "applied", "already-satisfied", "skipped", "failed", "rolled-back"
+      ]
+    },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "backupManifest": { "type": "array", "items": { "type": "object" } },
+    "operations": { "type": "array", "items": { "type": "object" } },
+    "automatic": { "type": "array", "items": { "type": "object" } },
+    "manual": { "type": "array", "items": { "type": "object" } },
+    "decisions": { "type": "array", "items": { "type": "object" } },
+    "errors": { "type": "array", "items": { "type": "object" } }
+  }
+}

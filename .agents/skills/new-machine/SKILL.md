@@ -1,24 +1,17 @@
 ---
 name: new-machine
-description: Initialize the current machine from this repository's upstream JSON changes. Use when the user says "new machine", "initialize this computer", "$new-machine", or asks to set up a fresh clone of system-tweak. This skill only dispatches work described in AGENTS.md.
+description: Initialize a machine from effective upstream CHG v2 records through the guarded executor.
 ---
 
 # New machine initialization
 
-1. Read root `AGENTS.md`, especially §0, §1, §2, §3, §5, §6, §8, and §10.
-2. Run `git fetch origin`. If the remote has updates and the working tree is clean, run `git pull --ff-only`; otherwise ask before proceeding.
-3. Run `python3 scripts/validate-changes.py`.
-4. Treat a missing `.local/applied.json` as "zero changes processed".
-5. Read `changes/index.json` and every referenced `changes/CHG-XXXX.json`.
-6. Compute the transitive `supersedes` closure.
-7. Skip every pending CHG replaced by a higher-numbered CHG; do not execute older obsolete steps first.
-8. Treat `buildsOn` as design lineage only, never as an execution dependency.
-9. Process pending effective changes in ascending number order.
-10. For each effective CHG:
-    - run read-only `check.commands`;
-    - mark `already-satisfied` if already satisfied;
-    - otherwise back up `backupPaths`, apply the self-contained `apply` data, verify, and mark `applied`;
-    - ask before any conflict, high-risk, or ambiguous override.
-11. Update `.local/applied.json` after every CHG.
-12. Write one local `logs/YYYY-MM.md` entry if this machine was actually modified.
-13. Report every CHG status, skipped supersession chains, unresolved decisions, and backups.
+1. Read root `AGENTS.md` and follow the CHG v2 state machine.
+2. Fetch origin and only fast-forward a clean, non-diverged branch.
+3. Treat a missing `.local/applied.json` as an empty ledger; never hand-create statuses.
+4. Run `python3 scripts/chgctl.py validate` and the unit tests.
+5. Run `python3 scripts/chgctl.py plan`; it computes transitive supersession before any mutation.
+6. Present the exact plan, including owned paths, backups, operations, risk, decisions, and manual tests.
+7. Process only v2 CHGs through `chgctl apply`, `verify`, explicit user `confirm`, and `finalize`.
+8. Do not execute historical v1 commands. An effective v1 record blocks initialization until a v2 successor is published.
+9. Do not edit the ledger or run journal directly, infer manual success, change operation order, or mutate undeclared paths.
+10. Write one local task log for the completed state convergence and report unresolved decisions/failures honestly.

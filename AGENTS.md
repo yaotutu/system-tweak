@@ -79,7 +79,24 @@ Codex 0.155.1 不支持任意项目自定义 `/xxx` slash command；未知 `/xxx
 6. Push 被拒绝时，先 `git fetch origin` 判断原因；分叉时必须询问用户，禁止 force push。
 7. 本规则只约束 Git 跟踪内容；没有产生共享 CHG/manual/规则/脚本变更的纯本机系统修改不要求 push。
 
+## 1A. CHG v2 强制执行边界
+
+从 CHG v2 开始，`scripts/chgctl.py` 是唯一允许的执行入口。Agent 可以解释计划和询问用户，但不得直接解释或运行 CHG 中的底层操作。
+
+1. 已发布 CHG v1 永久只读，仅用于历史、审计和 supersedes 计算；新机器不得执行有效 v1，必须先发布 v2 successor。
+2. 所有未来可执行 CHG 必须使用 schema 2，并把脚本/模板放在 `changes/assets/CHG-XXXX/`，以 SHA-256 引用；禁止内联 heredoc 执行体。
+3. v2 必须声明 ownership、preconditions、typed operations、lifecycle、automatic/manual postconditions 和 rollback。
+4. 操作不得写 ownership 之外的路径，不得改变声明顺序，不得在 backup 前修改系统。
+5. 标准状态机：`pending → planned → backed-up → applying → verifying → awaiting-manual → applied`。失败进入 `failed`；没有新的 run，不得从 failed 变成 applied。
+6. 人工测试只能由用户实际完成并明确确认；Agent 不得根据命令输出、自动注入或推测调用 `confirm --pass`。
+7. `.local/applied.json`、`.local/runs/`、`.local/plans/`、`.local/evidence/` 只由 chgctl 原子写入；Agent 禁止直接编辑。
+8. `chgctl plan` 只读，不得改变台账；`audit` 只读，不得修复。
+9. 发布状态严格区分：draft、validated、committed-not-pushed、published。只有 commit 已存在于 upstream 时才允许称为 published。
+10. `chgctl publish-check`、完整测试和远端同步检查通过前，不得提交或报告发布完成。
+
 ## 2. 应用待处理变更
+
+> CHG v2 由 §1A 和 `chgctl` 执行；本节旧的逐步规则仅用于理解历史 v1 语义，不再授权执行 v1。
 
 适用：新电脑初始化、已有电脑补齐状态、检查缺失配置。
 
@@ -320,9 +337,11 @@ foot = always
 6. Commit。
 7. 报告 CHG 编号和本机处理结果。
 
-## 8. CHG JSON v1 格式与不可变性
+## 8. CHG JSON 格式与不可变性
 
 本仓库已完成一次用户授权的 JSON 迁移；迁移后已发布 CHG 永远 append-only：不重写、不重排、不复用编号、不删除。新方案替代旧方案时，用更高编号写 `supersedes`；在旧方案上继续演进时写 `buildsOn`。
+
+CHG v1 是历史只读格式；CHG v2 是当前唯一可执行格式。`changes/index.json` 使用 schema 2，并为每个 id/file 明确记录其 CHG schema 版本。已发布 v1 不迁移、不重写；仍需部署的状态由新的 v2 CHG 取代。
 
 文件命名：
 

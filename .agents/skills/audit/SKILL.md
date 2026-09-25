@@ -1,17 +1,15 @@
 ---
 name: audit
-description: Audit this machine against current effective upstream JSON changes without modifying the system. Use when the user says "audit", "check all changes", "verify current state", or "$audit". This skill is read-only.
+description: Read-only audit of effective processed CHGs through the guarded executor.
 ---
 
 # Audit current machine
 
-1. Read root `AGENTS.md`, especially §0, §1, §3, §8, §9, and §10.
-2. Run `git fetch origin`. If the remote has updates and the working tree is clean, run `git pull --ff-only`; otherwise ask before proceeding.
-3. Run `python3 scripts/validate-changes.py`.
-4. Read `changes/index.json`, every referenced CHG JSON, and `.local/applied.json`.
-5. Compute the transitive `supersedes` closure.
-6. Re-run `check.commands` only for processed changes that remain effective.
-7. Do not treat a superseded old change as current drift.
-8. Do not modify the system.
-9. Report each CHG as still satisfied, drifted, superseded, skipped, or failed.
-10. If an effective change has drifted, ask before reapplying it.
+1. Read root `AGENTS.md`, especially audit and CHG v2 rules.
+2. Fetch origin and only fast-forward a clean, non-diverged branch.
+3. Run `python3 scripts/chgctl.py validate`.
+4. Run `python3 scripts/chgctl.py audit`.
+5. Audit must execute read-only automatic assertions only. It may not call apply, restore, package, service mutation, or any repair path.
+6. Treat superseded history as history, not current drift.
+7. Report satisfied, drifted, v1-manual-audit-required, skipped, and failed states exactly.
+8. Ask before any reapplication; auditing itself never modifies system or ledger state.

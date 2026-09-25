@@ -10,3 +10,7 @@ backups/
 
 # 本机处理台账不参与同步
 .local/
+
+# Python validation caches
+__pycache__/
+*.pyc

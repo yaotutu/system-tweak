@@ -1,44 +1,16 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "CHG-0013",
   "title": "可重放的 Fcitx5/Rime 中文输入配置",
   "date": "2026-09-25",
-  "scope": [
-    "Linux",
-    "Omarchy",
-    "App"
-  ],
-  "domains": [
-    "rime",
-    "fcitx5",
-    "input-method",
-    "hyprland"
-  ],
-  "keywords": [
-    "Fcitx5",
-    "Rime",
-    "Rime Ice",
-    "雾凇拼音",
-    "Ctrl+Space",
-    "Shift",
-    "ascii_mode",
-    "shift_toggle.lua",
-    "Hyprland 0.56.2",
-    "keyboard-us",
-    "rime_deployer"
-  ],
-  "supersedes": [
-    "CHG-0001"
-  ],
+  "scope": ["Linux", "Omarchy", "App"],
+  "domains": ["rime", "fcitx5", "input-method", "hyprland"],
+  "keywords": ["Fcitx5", "Rime", "Rime Ice", "雾凇拼音", "Ctrl+Space", "Shift", "ascii_mode", "Hyprland 0.56.2", "keyboard-us"],
+  "supersedes": ["CHG-0001"],
   "buildsOn": [],
   "manual": "fcitx5-rime-shift.md",
   "risk": "medium",
-  "requiresBackup": true,
-  "backupPaths": [
-    "~/.config/fcitx5/profile",
-    "~/.config/fcitx5/config",
-    "~/.local/share/fcitx5/rime"
-  ],
+  "backupPaths": ["~/.config/fcitx5/profile", "~/.config/fcitx5/config", "~/.local/share/fcitx5/rime"],
   "intent": {
     "summary": "以可重复、可验证的方式配置 Fcitx5/Rime Ice，并让 Ctrl+Space 与 Shift 分别管理框架激活和 Rime 中英文模式。",
     "outcomes": [
@@ -47,95 +19,140 @@
       "Fcitx5 不接管 Shift；左、右 Shift 均由 Rime 在按下时切换 ascii_mode。",
       "有未上屏编码时，Shift 先提交原始英文编码，再切换到英文模式。",
       "Rime Ice 主词典及 melt_eng、radical_pinyin 依赖词典均完整部署。",
-      "本变更不修改 Fcitx5 Classic UI 主题及 CHG-0012 的 PNG 性能主题。"
+      "不修改 Fcitx5 Classic UI 主题或 CHG-0012 的主题目录。"
     ]
   },
-  "check": {
-    "readOnly": true,
-    "commands": [
-      "pacman -Q fcitx5-rime librime",
-      "test -f ~/.local/share/fcitx5/rime/rime_ice.schema.yaml || test -f /usr/share/rime-data/rime_ice.schema.yaml",
-      "grep -nE '^DefaultIM=rime$|^Name=keyboard-us$|^Name=rime$' ~/.config/fcitx5/profile",
-      "grep -n -A2 '^\\[Hotkey/TriggerKeys\\]' ~/.config/fcitx5/config",
-      "grep -n -A2 '^\\[Hotkey/AltTriggerKeys\\]' ~/.config/fcitx5/config",
-      "test -f ~/.local/share/fcitx5/rime/lua/shift_toggle.lua && grep -n 'return 1' ~/.local/share/fcitx5/rime/lua/shift_toggle.lua",
-      "grep -n 'engine/processors/@before 0: lua_processor@\\*shift_toggle' ~/.local/share/fcitx5/rime/rime_ice.custom.yaml",
-      "grep -nE 'Shift_(L|R): noop' ~/.local/share/fcitx5/rime/default.custom.yaml",
-      "test -f ~/.local/share/fcitx5/rime/build/rime_ice.table.bin && test -f ~/.local/share/fcitx5/rime/build/melt_eng.table.bin && test -f ~/.local/share/fcitx5/rime/build/radical_pinyin.table.bin",
-      "systemctl --user is-active omarchy-fcitx5.service",
-      "hyprctl version"
-    ],
-    "expected": [
-      "fcitx5-rime 与 librime 已安装，用户目录或共享目录中有完整 Rime Ice 数据。",
-      "profile 包含 DefaultIM=rime、keyboard-us 和 rime。",
-      "TriggerKeys 明确包含 Control+space，AltTriggerKeys 为空。",
-      "最小 shift_toggle.lua 已安装并在 Rime Ice processor chain 首位注册。",
-      "Rime 内建 Shift_L 与 Shift_R 行为均为 noop。",
-      "rime_ice、melt_eng、radical_pinyin 三个编译词典均存在。",
-      "Fcitx5 服务 active；Hyprland 版本可用于决定是否保留 press-based workaround。"
-    ]
+  "ownership": {
+    "paths": ["~/.config/fcitx5/profile", "~/.config/fcitx5/config", "~/.local/share/fcitx5/rime"],
+    "services": ["omarchy-fcitx5.service"],
+    "packages": ["fcitx5-rime", "librime", "git", "python-yaml"]
   },
-  "apply": {
-    "selfContained": true,
-    "steps": [
-      "备份所有 backupPaths，并记录原先存在与不存在的路径。",
-      "安装 fcitx5-rime、librime、git 与 python-yaml；使用 Rime 官方 Plum 将完整 Rime Ice 数据安装到用户目录，不替换系统级 librime-data。",
-      "停止 omarchy-fcitx5.service，防止旧进程退出时把内存中的旧 profile 覆盖回磁盘。",
-      "合并 Fcitx5 profile：保留其他输入法，确保 keyboard-us 与 rime 位于 Default 组且 DefaultIM=rime。",
-      "合并 Fcitx5 全局配置：TriggerKeys 设为 Control+space，AltTriggerKeys 写入空条目，保留其他 section。",
-      "安装最小 shift_toggle.lua；它只处理 Shift press，提交原始编码、清空 composition、切换 ascii_mode，并返回 kAccepted。",
-      "为 default.custom.yaml 与 rime_ice.custom.yaml 写入路径级 patch；不得以 patch.schema 覆盖完整 schema 元数据。遇到未知自定义内容时先比较并合并，不得直接覆盖。",
-      "用共享 Rime Ice 数据完整部署用户 build，生成主词典和依赖词典。",
-      "所有配置写入和部署结束后再启动 omarchy-fcitx5.service。"
-    ],
-    "commands": [
-      "yay -S --needed fcitx5-rime librime git python-yaml",
-      "systemctl --user stop omarchy-fcitx5.service",
-      "tmp=$(mktemp -d) && git clone --depth=1 https://github.com/rime/plum.git \"$tmp/plum\" && rime_dir=\"$HOME/.local/share/fcitx5/rime\" bash \"$tmp/plum/rime-install\" iDvel/rime-ice; status=$?; rm -rf \"$tmp\"; exit $status",
-      "python3 - <<'PY'\nfrom configparser import RawConfigParser\nfrom pathlib import Path\nimport re\n\ndef load(path):\n    cfg = RawConfigParser(interpolation=None, strict=False, delimiters=('=',))\n    cfg.optionxform = str\n    if path.exists():\n        cfg.read(path, encoding='utf-8')\n    return cfg\n\ndef save(cfg, path):\n    path.parent.mkdir(parents=True, exist_ok=True)\n    with path.open('w', encoding='utf-8') as stream:\n        cfg.write(stream, space_around_delimiters=False)\n\nprofile_path = Path.home() / '.config/fcitx5/profile'\nprofile = load(profile_path)\nitem_re = re.compile(r'Groups/0/Items/(\\d+)$')\nitems = []\nfor section in list(profile.sections()):\n    match = item_re.fullmatch(section)\n    if match:\n        values = dict(profile.items(section))\n        name = values.get('Name', '').strip()\n        if name:\n            items.append((int(match.group(1)), name, values))\n        profile.remove_section(section)\nitems.sort()\nby_name = {}\nfor _, name, values in items:\n    by_name.setdefault(name, values)\nordered = ['keyboard-us', 'rime'] + [name for _, name, _ in items if name not in {'keyboard-us', 'rime'}]\nif not profile.has_section('Groups/0'):\n    profile.add_section('Groups/0')\nprofile.set('Groups/0', 'Name', profile.get('Groups/0', 'Name', fallback='Default'))\nprofile.set('Groups/0', 'Default Layout', profile.get('Groups/0', 'Default Layout', fallback='us'))\nprofile.set('Groups/0', 'DefaultIM', 'rime')\nfor index, name in enumerate(dict.fromkeys(ordered)):\n    section = f'Groups/0/Items/{index}'\n    profile.add_section(section)\n    values = by_name.get(name, {})\n    profile.set(section, 'Name', name)\n    if values.get('Layout'):\n        profile.set(section, 'Layout', values['Layout'])\nif not profile.has_section('GroupOrder'):\n    profile.add_section('GroupOrder')\nprofile.set('GroupOrder', '0', 'Default')\nsave(profile, profile_path)\n\nconfig_path = Path.home() / '.config/fcitx5/config'\nconfig = load(config_path)\nfor section, value in [('Hotkey/TriggerKeys', 'Control+space'), ('Hotkey/AltTriggerKeys', '')]:\n    if config.has_section(section):\n        config.remove_section(section)\n    config.add_section(section)\n    config.set(section, '0', value)\nsave(config, config_path)\nPY",
-      "mkdir -p ~/.local/share/fcitx5/rime/lua && cat > ~/.local/share/fcitx5/rime/lua/shift_toggle.lua <<'LUA'\nlocal shift_toggle = {}\n\nlocal function is_shift(key)\n  local repr = key:repr()\n  return repr == \"Shift_L\" or repr == \"Shift_R\"\nend\n\nfunction shift_toggle.func(key, env)\n  if key:release() or not is_shift(key) then\n    return 2\n  end\n\n  local context = env.engine.context\n  if context:is_composing() then\n    env.engine:commit_text(context.input)\n    context:clear()\n  end\n\n  context:set_option(\"ascii_mode\", not context:get_option(\"ascii_mode\"))\n  return 1\nend\n\nreturn shift_toggle\nLUA",
-      "python3 - <<'PY'\nfrom pathlib import Path\nimport yaml\n\ndef load(path):\n    if not path.exists():\n        return {}\n    data = yaml.safe_load(path.read_text(encoding='utf-8'))\n    if data is None:\n        return {}\n    if not isinstance(data, dict):\n        raise SystemExit(f'{path}: expected a YAML mapping')\n    return data\n\ndef save(path, data):\n    path.parent.mkdir(parents=True, exist_ok=True)\n    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding='utf-8')\n\nrime = Path.home() / '.local/share/fcitx5/rime'\ndefault_path = rime / 'default.custom.yaml'\ndefault = load(default_path)\npatch = default.setdefault('patch', {})\nif not isinstance(patch, dict):\n    raise SystemExit(f'{default_path}: patch must be a mapping; merge manually')\nswitch_key = patch.setdefault('ascii_composer/switch_key', {})\nif not isinstance(switch_key, dict):\n    raise SystemExit(f'{default_path}: ascii_composer/switch_key must be a mapping; merge manually')\nswitch_key['Shift_L'] = 'noop'\nswitch_key['Shift_R'] = 'noop'\nsave(default_path, default)\n\nschema_path = rime / 'rime_ice.custom.yaml'\nschema = load(schema_path)\npatch = schema.setdefault('patch', {})\nif not isinstance(patch, dict):\n    raise SystemExit(f'{schema_path}: patch must be a mapping; merge manually')\npatch['engine/processors/@before 0'] = 'lua_processor@*shift_toggle'\nsave(schema_path, schema)\nPY",
-      "rm -rf ~/.local/share/fcitx5/rime/build && rime_deployer --build \"$HOME/.local/share/fcitx5/rime\" /usr/share/rime-data \"$HOME/.local/share/fcitx5/rime/build\"",
-      "systemctl --user start omarchy-fcitx5.service"
-    ]
-  },
-  "adapt": [
-    "网络不可用时，可使用已存在于用户目录或 /usr/share/rime-data 的完整 Rime Ice 数据；不得为了安装 AUR rime-ice-data 而自动移除系统 librime-data 或其他词典包。",
-    "若 profile 中还有其他输入法，保留其条目；keyboard-us 是 Fcitx5 非激活态，不得因 DefaultIM=rime 而删除。",
-    "Plum 安装必须在自定义 patch 合并之前执行。default.custom.yaml 或 rime_ice.custom.yaml 含未知内容时只做键级合并；发现非 mapping 结构就停止并询问。",
-    "若系统不是 Hyprland 0.56.2，先检查 Shift press/release 是否完整送达 Rime；上游修复后应使用更高编号 CHG 恢复 release-based 行为。",
-    "若没有 omarchy-fcitx5.service，使用该机器实际的 Fcitx5 用户服务或安全停止/启动方式，但必须保持先停服务、后写 profile、最后启动的顺序。",
-    "不得修改 ~/.config/fcitx5/conf/classicui.conf 或任何主题目录；CHG-0012 的主题状态独立保留。"
+  "preconditions": [
+    {
+      "id": "existing-rime-customization",
+      "type": "manual-decision",
+      "prompt": "目标机器已有 Rime 自定义配置。确认以键级合并继续，而不是覆盖现有偏好吗？",
+      "when": {"type": "path-nonempty", "path": "~/.local/share/fcitx5/rime"}
+    }
   ],
-  "verify": {
-    "commands": [
-      "pacman -Q fcitx5-rime librime",
-      "grep -nE '^DefaultIM=rime$|^Name=keyboard-us$|^Name=rime$' ~/.config/fcitx5/profile",
-      "grep -n -A2 '^\\[Hotkey/TriggerKeys\\]' ~/.config/fcitx5/config && grep -n -A2 '^\\[Hotkey/AltTriggerKeys\\]' ~/.config/fcitx5/config",
-      "test -f ~/.local/share/fcitx5/rime/build/rime_ice.table.bin && test -f ~/.local/share/fcitx5/rime/build/melt_eng.table.bin && test -f ~/.local/share/fcitx5/rime/build/radical_pinyin.table.bin",
-      "grep -n -A4 'processors:' ~/.local/share/fcitx5/rime/build/rime_ice.schema.yaml | grep 'lua_processor@\\*shift_toggle'",
-      "grep -n -A4 'switch_key:' ~/.local/share/fcitx5/rime/build/default.yaml | grep -E 'Shift_(L|R): noop'",
-      "systemctl --user is-active omarchy-fcitx5.service",
-      "before=$(fcitx5-remote); before_im=$(fcitx5-remote -n); fcitx5-remote -t; sleep 1; after=$(fcitx5-remote); after_im=$(fcitx5-remote -n); fcitx5-remote -t; sleep 1; restored=$(fcitx5-remote); restored_im=$(fcitx5-remote -n); printf 'before=%s/%s after=%s/%s restored=%s/%s\\n' \"$before\" \"$before_im\" \"$after\" \"$after_im\" \"$restored\" \"$restored_im\"; test \"$before\" != \"$after\" && test \"$before\" = \"$restored\" && test \"$before_im\" = \"$restored_im\"",
-      "journalctl --user -u omarchy-fcitx5.service --since '5 minutes ago' --no-pager | grep -Ei 'error|fail|lua' && exit 1 || true"
+  "operations": [
+    {
+      "id": "ensure-packages",
+      "type": "package.ensure",
+      "manager": "yay",
+      "packages": ["fcitx5-rime", "librime", "git", "python-yaml"],
+      "rollback": "none",
+      "rollbackReason": "安装软件包默认保留；卸载需要独立用户确认。"
+    },
+    {
+      "id": "stop-fcitx",
+      "type": "service.stop",
+      "name": "omarchy-fcitx5.service",
+      "scope": "user",
+      "rollback": "none",
+      "rollbackReason": "后续 start 操作恢复服务；失败处理也会尝试恢复原服务状态。"
+    },
+    {
+      "id": "install-rime-ice",
+      "type": "script.run",
+      "asset": {"path": "changes/assets/CHG-0013/install-rime-ice.sh", "sha256": "9fbae4340de9607cf15e080b01105e13241c24435eecdc5f5a7eb00df275eca7"},
+      "interpreter": "bash",
+      "args": [],
+      "env": {},
+      "writes": ["~/.local/share/fcitx5/rime"],
+      "rollback": "backup"
+    },
+    {
+      "id": "merge-fcitx-config",
+      "type": "script.run",
+      "asset": {"path": "changes/assets/CHG-0013/merge-profile.py", "sha256": "6298803f6fc7565ef694a035595b324c560c886132d0aecba5c879709acaad3a"},
+      "interpreter": "python3",
+      "args": [],
+      "env": {},
+      "writes": ["~/.config/fcitx5/profile", "~/.config/fcitx5/config"],
+      "rollback": "backup"
+    },
+    {
+      "id": "install-shift-processor",
+      "type": "artifact.install",
+      "destination": "~/.local/share/fcitx5/rime/lua/shift_toggle.lua",
+      "asset": {"path": "changes/assets/CHG-0013/shift_toggle.lua", "sha256": "6a3d111d54e00931da50fa3f5eae7f04045d9271640c4ea0b730028610a58534"},
+      "mode": "0644",
+      "rollback": "backup"
+    },
+    {
+      "id": "disable-release-shift",
+      "type": "file.mergeYaml",
+      "path": "~/.local/share/fcitx5/rime/default.custom.yaml",
+      "values": {"patch": {"ascii_composer/switch_key": {"Shift_L": "noop", "Shift_R": "noop"}}},
+      "rollback": "backup"
+    },
+    {
+      "id": "register-shift-processor",
+      "type": "file.mergeYaml",
+      "path": "~/.local/share/fcitx5/rime/rime_ice.custom.yaml",
+      "values": {"patch": {"engine/processors/@before 0": "lua_processor@*shift_toggle"}},
+      "rollback": "backup"
+    },
+    {
+      "id": "deploy-rime",
+      "type": "command.run",
+      "argv": ["rime_deployer", "--build", "~/.local/share/fcitx5/rime", "/usr/share/rime-data", "~/.local/share/fcitx5/rime/build"],
+      "env": {},
+      "writes": ["~/.local/share/fcitx5/rime"],
+      "riskAcknowledgement": "rime_deployer 是 Rime 官方部署工具；输出仅写入已声明的用户数据目录。",
+      "rollback": "backup"
+    },
+    {
+      "id": "start-fcitx",
+      "type": "service.start",
+      "name": "omarchy-fcitx5.service",
+      "scope": "user",
+      "rollback": "none",
+      "rollbackReason": "回滚流程会按备份前服务状态恢复。"
+    }
+  ],
+  "lifecycle": {
+    "constraints": [
+      {"before": "stop-fcitx", "after": "install-rime-ice"},
+      {"before": "stop-fcitx", "after": "merge-fcitx-config"},
+      {"before": "stop-fcitx", "after": "install-shift-processor"},
+      {"before": "merge-fcitx-config", "after": "start-fcitx"},
+      {"before": "deploy-rime", "after": "start-fcitx"}
+    ]
+  },
+  "postconditions": {
+    "automatic": [
+      {"id": "packages-installed", "type": "package", "manager": "pacman", "names": ["fcitx5-rime", "librime"]},
+      {"id": "profile-state", "type": "file.contains", "path": "~/.config/fcitx5/profile", "all": ["DefaultIM=rime", "Name=keyboard-us", "Name=rime"], "none": []},
+      {"id": "hotkey-state", "type": "file.contains", "path": "~/.config/fcitx5/config", "all": ["[Hotkey/TriggerKeys]", "0=Control+space", "[Hotkey/AltTriggerKeys]"], "none": []},
+      {"id": "rime-main-dictionary", "type": "file.exists", "path": "~/.local/share/fcitx5/rime/build/rime_ice.table.bin", "kind": "file"},
+      {"id": "rime-english-dictionary", "type": "file.exists", "path": "~/.local/share/fcitx5/rime/build/melt_eng.table.bin", "kind": "file"},
+      {"id": "rime-radical-dictionary", "type": "file.exists", "path": "~/.local/share/fcitx5/rime/build/radical_pinyin.table.bin", "kind": "file"},
+      {"id": "fcitx-active", "type": "service", "name": "omarchy-fcitx5.service", "scope": "user", "state": "active"},
+      {"id": "framework-toggle", "type": "command", "argv": ["python3", "changes/assets/CHG-0013/verify-toggle.py"], "expectedExit": 0, "stdoutContains": ["toggle-cycle=ok"], "stderrNotContains": ["Traceback", "ERROR"]}
     ],
-    "expected": [
-      "profile、热键、Rime patch、Lua processor 与三个编译词典均符合目标状态。",
-      "Fcitx5 服务 active，最近日志没有配置、Lua 或 Rime 加载错误。",
-      "状态测试完成 keyboard-us/state=1 与 rime/state=2 的双向切换并恢复原状态。",
-      "在真实文本框中，Ctrl+Space 可以双向开启和关闭 Rime；自动按键注入仅可作辅助，不得替代人工验证。",
-      "Rime 开启时，左 Shift 和右 Shift 均可在中文与英文之间切换。",
-      "中文状态输入 nihao 后按 Shift，上屏原始 nihao 并切换到英文。",
-      "普通中文拼音仍能显示候选并正常上屏。"
+    "manual": [
+      {"id": "ctrl-space-real-field", "instructions": "在真实可输入文本框中连续测试两次 Ctrl+Space。", "expected": "在 keyboard-us/state=1 与 rime/state=2 之间双向切换。"},
+      {"id": "both-shifts", "instructions": "Rime 开启时分别轻按左 Shift 和右 Shift。", "expected": "左右 Shift 都能在中文与英文模式间切换。"},
+      {"id": "raw-code-commit", "instructions": "中文状态输入 nihao，不选候选，直接按 Shift。", "expected": "上屏原始 nihao 并切换到英文模式。"},
+      {"id": "normal-chinese-input", "instructions": "重新切到中文，输入 nihao 并选择候选。", "expected": "出现中文候选并能正常上屏。"}
     ]
   },
   "rollback": {
-    "steps": [
+    "strategy": "backup.restore",
+    "instructions": [
       "停止 omarchy-fcitx5.service。",
-      "从本机应用前备份恢复 profile、config、Rime custom YAML、shift_toggle.lua 与 build；原本不存在的路径应删除本次新增内容。",
-      "如果未恢复 build，使用恢复后的配置重新运行 rime_deployer --build。",
-      "启动 omarchy-fcitx5.service，并验证备份前的输入法行为。",
-      "默认保留已安装的软件包；如需卸载或恢复被替换的 Rime 数据包，必须先询问用户。"
+      "按 run journal 中的 backup manifest 恢复 profile、config 与 Rime 用户目录。",
+      "恢复应用前服务状态并重新执行只读检查。",
+      "软件包默认保留；卸载需要新的明确用户确认。"
     ]
-  }
+  },
+  "adapt": [
+    "网络不可用时，使用已验证的离线 Rime Ice 数据；不得自动移除系统 librime-data。",
+    "发现现有 Rime 自定义时必须暂停并取得 manual-decision，随后只做键级合并。",
+    "非 Hyprland 0.56.2 环境应先验证 Shift release；上游修复后用更高编号 CHG 取代本 workaround。",
+    "不存在 omarchy-fcitx5.service 时必须暂停并选择目标机器实际的用户服务，不得静默替换。",
+    "不得修改 classicui.conf 或任何 Fcitx5 主题目录。"
+  ]
 }

@@ -45,7 +45,7 @@ All repository workflows keep the remote and local branch coherent:
 
 ## CHG data contract
 
-Every change is a JSON object under `changes/`, matching `schema/chg.schema.json`:
+Published CHG v1 records are immutable history. All new executable changes use CHG v2 (`schema/chg-v2.schema.json`) and run only through `scripts/chgctl.py`:
 
 ```text
 changes/CHG-XXXX.json
@@ -53,10 +53,12 @@ changes/CHG-XXXX.json
 
 `changes/index.json` is the canonical manifest. It contains only each record's `id` and `file`; the CHG file itself is the sole source of full metadata.
 
-Validate all changes with:
+Validate and plan changes with:
 
 ```bash
 python3 scripts/validate-changes.py
+python3 scripts/chgctl.py validate
+python3 scripts/chgctl.py plan
 ```
 
 The validator checks:
@@ -71,7 +73,24 @@ The validator checks:
 - `check.readOnly=true`;
 - `apply.selfContained=true`;
 - index/record consistency;
-- absence of legacy Markdown CHG files.
+- absence of legacy Markdown CHG files;
+- v2 asset checksums, ownership, operation IDs, lifecycle order, and rollback coverage.
+
+### CHG v2 execution states
+
+```text
+pending → planned → backed-up → applying → verifying → awaiting-manual → applied
+```
+
+`chgctl` owns backups, run journals, evidence, and ledger transitions. Manual tests remain blocked until the user explicitly confirms each emitted test ID. An Agent may not reorder operations, write undeclared paths, edit the ledger, or execute v1.
+
+Publication status is separate from execution status:
+
+```text
+draft → validated → committed-not-pushed → published
+```
+
+Only a commit present on the configured upstream is `published`.
 
 ### Core field meanings
 
